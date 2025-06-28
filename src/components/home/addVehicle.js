@@ -196,11 +196,11 @@ const AddVehicle = () => {
             />
           ))}
 
-          <div className="text-center my-3">
+          {/* <div className="text-center my-3">
             <button onClick={addVehicle} className="btn btn-primary btn-border">
               Add Vehicle
             </button>
-          </div>
+          </div> */}
         </div>
 
         <div className="d-flex justify-content-end p-3 border-top">

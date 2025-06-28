@@ -224,6 +224,7 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
         !formData.email ||
         roomList.length === 0
       ) {
+        console.log(formData.city, "formData");
         toast.error(
           "Please fill all required fields and add at least one room"
         );
@@ -421,13 +422,16 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
                   sx={{ width: "100%" }}
                   size="small"
                   options={cityOptions}
+                  freeSolo
+                  autoHighlight
                   value={
                     formData.city
                       ? { label: formData.city, value: formData.city }
                       : null
                   }
-                  autoHighlight
-                  getOptionLabel={(option) => option.label}
+                  getOptionLabel={(option) =>
+                    typeof option === "string" ? option : option.label
+                  }
                   renderOption={(props, option) => (
                     <Box component="li" {...props}>
                       {option.label}
@@ -443,9 +447,29 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
                       }}
                     />
                   )}
-                  onChange={(e, selectedOption) =>
-                    handleAutocompleteChange("city", selectedOption)
-                  }
+                  onChange={(event, newValue) => {
+                    let selectedCity = "";
+
+                    if (typeof newValue === "string") {
+                      selectedCity = newValue;
+                    } else if (newValue && typeof newValue === "object") {
+                      selectedCity = newValue.value || newValue.label || "";
+                    }
+
+                    setFormData((prev) => ({
+                      ...prev,
+                      city: selectedCity,
+                    }));
+                  }}
+                  onInputChange={(event, inputValue, reason) => {
+                    if (reason === "input") {
+                      // ✅ Live update the input value
+                      setFormData((prev) => ({
+                        ...prev,
+                        city: inputValue,
+                      }));
+                    }
+                  }}
                   disabled={!selectedState}
                 />
               </div>
