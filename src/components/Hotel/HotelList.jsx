@@ -24,6 +24,11 @@ import {
 } from "@mui/icons-material";
 import LoadingSpinner from "../Common/LoadingSpinner";
 import ErrorMessage from "../Common/ErrorMessage";
+import CloseIcon from "@mui/icons-material/Close";
+import Switch from "@mui/material/Switch";
+import Carousel from "react-material-ui-carousel";
+import Tooltip from "@mui/material/Tooltip";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const HotelList = ({
   hotels = [],
@@ -40,6 +45,8 @@ const HotelList = ({
   editingHotel,
   handleUpdateHotel,
   setEditingHotel,
+  handleStatusToggle,
+  updatingHotelId,
 }) => {
   const [editFormData, setEditFormData] = React.useState(null);
   const [error, setError] = React.useState(null);
@@ -162,7 +169,33 @@ const HotelList = ({
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  {hotel.active == false ? "inactive" : "active" || ""}
+                  <Tooltip
+                    title={hotel.active ? "Deactivate hotel" : "Activate hotel"}
+                  >
+                    <Box display="flex" alignItems="center">
+                      {updatingHotelId === hotel._id ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        <>
+                          <Switch
+                            checked={hotel.active}
+                            onChange={(e) =>
+                              handleStatusToggle(hotel._id, e.target.checked)
+                            }
+                            color="primary"
+                            size="small"
+                          />
+                          <Chip
+                            label={hotel.active ? "Active" : "Inactive"}
+                            size="small"
+                            color={hotel.active ? "success" : "default"}
+                            variant="outlined"
+                            sx={{ ml: 1 }}
+                          />
+                        </>
+                      )}
+                    </Box>
+                  </Tooltip>
                 </TableCell>
                 <TableCell>
                   {hotel.rooms?.length || 0} types
@@ -263,7 +296,7 @@ const HotelList = ({
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: isMobile ? "90%" : "70%",
+            width: isMobile ? "95%" : "80%",
             maxHeight: "90vh",
             overflowY: "auto",
             bgcolor: "background.paper",
@@ -274,111 +307,256 @@ const HotelList = ({
         >
           {selectedHotel ? (
             <div>
-              <Typography variant="h5" gutterBottom>
-                {selectedHotel.hotelName || "Hotel Details"}
-              </Typography>
+              {/* Header Section */}
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography variant="h4" gutterBottom>
+                  {selectedHotel.hotelName}
+                  {selectedHotel.active && (
+                    <Chip
+                      label="Active"
+                      color="success"
+                      size="small"
+                      sx={{ ml: 1 }}
+                    />
+                  )}
+                </Typography>
+                <IconButton onClick={handleCloseViewModal}>
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+
               <Typography
                 variant="subtitle1"
                 color="textSecondary"
                 gutterBottom
               >
-                {selectedHotel.hotelType || "N/A"} Hotel •{" "}
-                {selectedHotel.city || "N/A"}, {selectedHotel.state || "N/A"}
+                {selectedHotel.hotelType} • {selectedHotel.city},{" "}
+                {selectedHotel.state}
               </Typography>
 
-              <Grid container spacing={2} sx={{ mt: 2 }}>
+              {/* Image Slider */}
+              {selectedHotel.imgs?.length > 0 ? (
+                <Box sx={{ my: 3 }}>
+                  <Carousel
+                    autoPlay={false}
+                    navButtonsAlwaysVisible
+                    indicators
+                    animation="slide"
+                  >
+                    {selectedHotel.imgs.map((img, index) => (
+                      <Box key={index} sx={{ height: "300px" }}>
+                        <img
+                          src={img.path}
+                          alt={`${selectedHotel.hotelName} ${index + 1}`}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </Box>
+                    ))}
+                  </Carousel>
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    height: "200px",
+                    bgcolor: "grey.200",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    my: 3,
+                  }}
+                >
+                  <Typography>No Images Available</Typography>
+                </Box>
+              )}
+
+              {/* Hotel Details */}
+              <Grid container spacing={3} sx={{ mt: 1 }}>
                 <Grid item xs={12} md={6}>
-                  <Typography variant="h6" gutterBottom>
-                    Basic Information
+                  <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+                    Hotel Information
                   </Typography>
-                  <Typography>
-                    <strong>Address:</strong>{" "}
-                    {selectedHotel.address || "No address"},{" "}
-                    {selectedHotel.city || "N/A"},{" "}
-                    {selectedHotel.state || "N/A"} -{" "}
-                    {selectedHotel.pincode || "N/A"}
-                  </Typography>
-                  <Typography>
-                    <strong>Contact:</strong>{" "}
-                    {selectedHotel.phoneNumber || "N/A"}
-                  </Typography>
-                  <Typography>
-                    <strong>Email:</strong> {selectedHotel.email || "N/A"}
-                  </Typography>
-                  <Typography>
-                    <strong>Contact Person:</strong>{" "}
-                    {selectedHotel.contactPerson || "N/A"}
-                  </Typography>
+
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2">Description</Typography>
+                    <Typography>
+                      {selectedHotel.descriptions || "No description available"}
+                    </Typography>
+                  </Box>
+
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2">Address</Typography>
+                      <Typography>
+                        {selectedHotel.address || "N/A"}
+                        <br />
+                        {selectedHotel.city}, {selectedHotel.state} -{" "}
+                        {selectedHotel.pincode}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2">Contact</Typography>
+                      <Typography>
+                        Phone: {selectedHotel.phoneNumber || "N/A"}
+                        <br />
+                        Email: {selectedHotel.email || "N/A"}
+                        <br />
+                        Contact Person: {selectedHotel.contactPerson || "N/A"}
+                      </Typography>
+                    </Grid>
+                  </Grid>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  {selectedHotel.imgs?.length > 0 ? (
-                    <img
-                      src={selectedHotel.imgs[0].path}
-                      alt={selectedHotel.hotelName || "Hotel"}
-                      style={{
-                        width: "100%",
-                        maxHeight: "200px",
-                        objectFit: "cover",
-                      }}
-                    />
+                  <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+                    Room Types & Rates
+                  </Typography>
+
+                  {selectedHotel.rooms?.length > 0 ? (
+                    <TableContainer component={Paper}>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Type</TableCell>
+                            <TableCell align="right">Occupancy 1</TableCell>
+                            <TableCell align="right">Occupancy 2</TableCell>
+                            <TableCell align="right">Occupancy 3</TableCell>
+                            <TableCell align="right">Child (Bed)</TableCell>
+                            <TableCell align="right">Child (No Bed)</TableCell>
+                            <TableCell>Amenities</TableCell>
+                            <TableCell>Availability</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {selectedHotel.rooms.map((room, index) => (
+                            <TableRow key={index}>
+                              <TableCell>{room.roomType}</TableCell>
+                              <TableCell align="right">
+                                ₹{room.occupancyRates[0]}
+                              </TableCell>
+                              <TableCell align="right">
+                                ₹{room.occupancyRates[1]}
+                              </TableCell>
+                              <TableCell align="right">
+                                ₹{room.occupancyRates[2]}
+                              </TableCell>
+                              <TableCell align="right">
+                                ₹{room.child.childWithBedPrice}
+                              </TableCell>
+                              <TableCell align="right">
+                                ₹{room.child.childWithoutBedPrice}
+                              </TableCell>
+                              <TableCell>
+                                {room.amenities?.join(", ") || "None"}
+                              </TableCell>
+                              <TableCell>
+                                {room.duration[0]?.startDate ? (
+                                  <>
+                                    {new Date(
+                                      room.duration[0].startDate
+                                    ).toLocaleDateString()}{" "}
+                                    -{" "}
+                                    {new Date(
+                                      room.duration[0].endDate
+                                    ).toLocaleDateString()}
+                                  </>
+                                ) : (
+                                  "N/A"
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
                   ) : (
-                    <Box
-                      sx={{
-                        width: "100%",
-                        height: "200px",
-                        bgcolor: "grey.200",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Typography>No Image Available</Typography>
-                    </Box>
+                    <Typography>No room information available</Typography>
                   )}
                 </Grid>
               </Grid>
 
-              <Typography variant="h6" sx={{ mt: 3 }} gutterBottom>
-                Room Types
-              </Typography>
-              {selectedHotel.rooms?.length > 0 ? (
-                <TableContainer component={Paper}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Price</TableCell>
-                        <TableCell>Inventory</TableCell>
-                        <TableCell>Amenities</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {selectedHotel.rooms.map((room, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{room.roomType || "N/A"}</TableCell>
-                          <TableCell>{room.roomPrice || "N/A"}</TableCell>
-                          <TableCell>{room.inventry || "N/A"}</TableCell>
-                          <TableCell>
-                            {room.amenities?.join(", ") || "No amenities"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              ) : (
-                <Typography>No room information available</Typography>
-              )}
+              {/* Additional Information */}
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 2,
+                  bgcolor: "background.paper",
+                  borderRadius: 1,
+                }}
+              >
+                <Typography variant="subtitle2">
+                  Additional Information
+                </Typography>
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                  <Grid item xs={6} md={3}>
+                    <Typography variant="body2">
+                      <strong>Last Updated:</strong>{" "}
+                      {new Date(selectedHotel.updatedAt).toLocaleString()}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                    <Typography variant="body2">
+                      <strong>Status:</strong>{" "}
+                      {selectedHotel.active ? "Active" : "Inactive"}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                    <Typography variant="body2">
+                      <strong>Total Rooms:</strong>{" "}
+                      {selectedHotel.rooms?.length || 0}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                    <Typography variant="body2">
+                      <strong>Total Images:</strong>{" "}
+                      {selectedHotel.imgs?.length || 0}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
 
-              <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-                <Button variant="contained" onClick={handleCloseViewModal}>
+              {/* Action Buttons */}
+              <Box
+                sx={{
+                  mt: 3,
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 2,
+                }}
+              >
+                <Button variant="outlined" onClick={handleCloseViewModal}>
                   Close
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => {
+                    handleCloseViewModal();
+                    handleEdit(selectedHotel);
+                  }}
+                >
+                  Edit Hotel
                 </Button>
               </Box>
             </div>
           ) : (
-            <ErrorMessage message="No hotel data available" />
+            <Box sx={{ p: 3, textAlign: "center" }}>
+              <Typography variant="h6">No hotel data available</Typography>
+              <Button
+                variant="outlined"
+                sx={{ mt: 2 }}
+                onClick={handleCloseViewModal}
+              >
+                Close
+              </Button>
+            </Box>
           )}
         </Box>
       </Modal>

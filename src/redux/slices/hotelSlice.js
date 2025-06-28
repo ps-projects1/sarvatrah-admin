@@ -37,9 +37,17 @@ export const updateHotel = createAsyncThunk(
   "hotels/update",
   async (hotelData, { rejectWithValue }) => {
     try {
+      const user = JSON.parse(localStorage.getItem("user")); // or get from Redux/Context if needed
+
       const response = await axios.put(
         `${API_URL}/hotel/update-hotel`,
-        hotelData
+        hotelData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
       );
       return response.data;
     } catch (error) {
@@ -137,7 +145,11 @@ const hotelSlice = createSlice({
       .addCase(addHotel.fulfilled, (state, action) => {
         state.data.unshift(action.payload);
       })
+      .addCase(updateHotel.pending, (state) => {
+        state.status = "loading";
+      })
       .addCase(updateHotel.fulfilled, (state, action) => {
+        state.status = "succeeded";
         const index = state.data.findIndex((h) => h._id === action.payload._id);
         if (index !== -1) {
           state.data[index] = action.payload;

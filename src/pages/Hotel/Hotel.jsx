@@ -143,13 +143,48 @@ const Hotel = () => {
     }
   };
 
-  const handleUpdateHotel = async (updatedHotel) => {
+  const handleUpdateHotel = async (formData) => {
     try {
-      await dispatch(updateHotel(updatedHotel));
+      dispatch(updateHotel(formData));
       showSuccessToast("Hotel updated successfully");
       setOpenEditModal(false);
-    } catch {
-      showErrorToast("Failed to update hotel");
+      dispatch(fetchHotels()); // Refresh the hotel list
+    } catch (error) {
+      showErrorToast(error.message || "Failed to update hotel");
+    }
+  };
+
+  const [updatingHotelId, setUpdatingHotelId] = useState(null);
+
+  const handleStatusToggle = async (hotelId, newStatus) => {
+    try {
+      if (!newStatus) {
+        const confirm = window.confirm(
+          "Are you sure you want to deactivate this hotel? " +
+            "This may affect bookings and visibility."
+        );
+        if (!confirm) return;
+      }
+
+      setUpdatingHotelId(hotelId);
+
+      // Rest of the update logic...
+      const updateData = {
+        _id: hotelId,
+        active: newStatus,
+      };
+
+      dispatch(updateHotel(updateData));
+      showSuccessToast(
+        `Hotel ${newStatus ? "activated" : "deactivated"} successfully`
+      );
+      dispatch(fetchHotels());
+      setSelectedHotel({ ...selectedHotel, active: newStatus });
+    } catch (error) {
+      showErrorToast("Failed to update hotel status");
+      console.error("Status update error:", error);
+    } finally {
+      setUpdatingHotelId(null);
     }
   };
 
@@ -234,6 +269,8 @@ const Hotel = () => {
             theme={theme}
             openViewModal={openViewModal}
             setOpenViewModal={setOpenViewModal}
+            handleStatusToggle={handleStatusToggle}
+            updatingHotelId={updatingHotelId}
           />
           {filteredData.length > pagination.rowsPerPage && (
             <Box display="flex" justifyContent="center" mt={3}>

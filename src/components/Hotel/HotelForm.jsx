@@ -68,7 +68,8 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
     phoneNumber: "",
     email: "",
     contactPerson: "",
-    description: "",
+    descriptions: "",
+    active: false,
     images: [],
     existingImages: [],
   });
@@ -108,9 +109,10 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
         phoneNumber: hotelData.phoneNumber || "",
         email: hotelData.email || "",
         contactPerson: hotelData.contactPerson || "",
-        description: hotelData.description || "",
+        descriptions: hotelData.descriptions || "",
         images: [],
-        existingImages: hotelData.images || [],
+        existingImages: hotelData.imgs || [], // Note: changed from 'images' to 'imgs' to match backend
+        active: hotelData.active || false, // Add active status if needed
       });
 
       if (hotelData.state) {
@@ -124,10 +126,17 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
       if (hotelData.rooms) {
         setRoomList(hotelData.rooms);
       }
+
+      if (hotelData.imgs) {
+        setFormData((prev) => ({
+          ...prev,
+          existingImages: hotelData.imgs.map((img) =>
+            img.path.replace("http://127.0.0.1:3232/", "")
+          ),
+        }));
+      }
     }
   }, [hotelData, mode]);
-
-  console.log(formData);
 
   useEffect(() => {
     if (selectedState) {
@@ -179,7 +188,8 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
 
   const handleRemoveImage = (index, isExisting) => {
     if (isExisting) {
-      setRemovedImages([...removedImages, formData.existingImages[index]]);
+      const imageToRemove = formData.existingImages[index];
+      setRemovedImages([...removedImages, imageToRemove]);
       setFormData((prevData) => {
         const newExistingImages = [...prevData.existingImages];
         newExistingImages.splice(index, 1);
@@ -202,43 +212,59 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
 
   const handleSubmitForm = async () => {
     try {
-      const formDataWithImages = new FormData();
-
-      // Append images
-      formData.images.forEach((image) => {
-        formDataWithImages.append("files", image);
-      });
-
-      // Append removed images if in edit mode
-      if (mode === "edit" && removedImages.length > 0) {
-        formDataWithImages.append(
-          "removedImages",
-          JSON.stringify(removedImages)
+      // Validate required fields
+      if (
+        !formData.hotelType ||
+        !formData.hotelName ||
+        !formData.address ||
+        !formData.state ||
+        !formData.city ||
+        !formData.pincode ||
+        !formData.phoneNumber ||
+        !formData.email ||
+        roomList.length === 0
+      ) {
+        toast.error(
+          "Please fill all required fields and add at least one room"
         );
+        return;
       }
 
-      // Append other form data
+      const formDataWithImages = new FormData();
+
+      // Append all form fields
       Object.entries(formData).forEach(([key, value]) => {
-        if (key !== "images" && key !== "existingImages") {
+        if (key !== "images" && key !== "existingImages" && key !== "active") {
           formDataWithImages.append(key, value);
         }
       });
 
-      // Append existing images if in edit mode
-      if (mode === "edit") {
-        formDataWithImages.append(
-          "existingImages",
-          JSON.stringify(formData.existingImages)
-        );
+      formDataWithImages.append("active", formData.active);
+
+      // Append rooms data
+      formDataWithImages.append("encryptedRooms", JSON.stringify(roomList));
+
+      // Append new images
+      formData.images.forEach((image) => {
+        formDataWithImages.append("files", image);
+      });
+
+      // In edit mode, include the _id and handle removed images
+      if (mode === "edit" && hotelData) {
+        formDataWithImages.append("_id", hotelData._id);
+
+        if (removedImages.length > 0) {
+          formDataWithImages.append(
+            "removedImages",
+            JSON.stringify(removedImages)
+          );
+        }
       }
 
-      const updatedFormData = JSON.stringify(roomList);
-      formDataWithImages.append("rooms", updatedFormData);
-
-      await onSubmit(formDataWithImages, mode);
+      await onSubmit(formDataWithImages);
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to submit form");
+      toast.error(error.message || "Failed to submit form");
     }
   };
 
@@ -487,12 +513,13 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
                   className="form-control"
                   id="descriptionInput"
                   rows="3"
-                  value={formData.description}
+                  value={formData.descriptions}
                   onChange={(e) =>
-                    handleInputChange("description", e.target.value)
+                    handleInputChange("descriptions", e.target.value)
                   }
                 ></textarea>
               </div>
+
               <div className="col-sm-4">
                 <label htmlFor="imagesInput" className="form-label">
                   Images (Max 10)
@@ -514,6 +541,25 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
                   images remaining
                 </small>
               </div>
+              <div className="col-sm-4">
+                <label htmlFor="activeInput" className="form-label">
+                  Status
+                </label>
+                <div className="form-check form-switch">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="activeInput"
+                    checked={formData.active}
+                    onChange={(e) =>
+                      handleInputChange("active", e.target.checked)
+                    }
+                  />
+                  <label className="form-check-label" htmlFor="activeInput">
+                    {formData.active ? "Active" : "Inactive"}
+                  </label>
+                </div>
+              </div>
               <div className="col-12">
                 <div className="d-flex flex-wrap gap-2 mt-2">
                   {formData.existingImages.map((image, index) => (
@@ -522,7 +568,11 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
                       className="position-relative"
                     >
                       <img
-                        src={`http://localhost:3232/${image}`}
+                        src={
+                          typeof image === "string"
+                            ? `http://localhost:3232/${image}`
+                            : image.path
+                        }
                         alt={`Hotel ${index}`}
                         style={{
                           width: "100px",
