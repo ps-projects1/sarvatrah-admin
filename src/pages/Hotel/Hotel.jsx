@@ -29,6 +29,7 @@ import HotelList from "../../components/Hotel/HotelList";
 import HotelForm from "../../components/Hotel/HotelForm";
 import { showErrorToast, showSuccessToast } from "../../utils/toast";
 import { useDebounce } from "../../hooks/useDebounce";
+import Swal from "sweetalert2";
 
 const Hotel = () => {
   const dispatch = useDispatch();
@@ -159,27 +160,36 @@ const Hotel = () => {
   const handleStatusToggle = async (hotelId, newStatus) => {
     try {
       if (!newStatus) {
-        const confirm = window.confirm(
-          "Are you sure you want to deactivate this hotel? " +
-            "This may affect bookings and visibility."
-        );
-        if (!confirm) return;
+        const result = await Swal.fire({
+          title: "Deactivate Hotel?",
+          text: "Are you sure you want to deactivate this hotel? This may affect bookings and visibility.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085d6",
+          confirmButtonText: "Yes, deactivate it!",
+          cancelButtonText: "Cancel",
+        });
+
+        if (!result.isConfirmed) return;
       }
 
       setUpdatingHotelId(hotelId);
 
-      // Rest of the update logic...
       const updateData = {
         _id: hotelId,
         active: newStatus,
       };
 
-      dispatch(updateHotel(updateData));
+      await dispatch(updateHotel(updateData));
       showSuccessToast(
         `Hotel ${newStatus ? "activated" : "deactivated"} successfully`
       );
-      dispatch(fetchHotels());
-      setSelectedHotel({ ...selectedHotel, active: newStatus });
+      await dispatch(fetchHotels());
+
+      setSelectedHotel((prev) =>
+        prev?._id === hotelId ? { ...prev, active: newStatus } : prev
+      );
     } catch (error) {
       showErrorToast("Failed to update hotel status");
       console.error("Status update error:", error);
