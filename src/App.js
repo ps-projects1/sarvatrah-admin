@@ -6,6 +6,7 @@ import ProtectedRoute from "../src/components/Common/ProtectedRoute";
 import LoadingSpinner from "./components/Common/LoadingSpinner";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ToastContainer from "./components/Common/ToastContainer";
+import "./assets/css/globalstyles.css";
 
 // Page components (lazy-loaded)
 const LoginPage = React.lazy(() => import("./pages/Auth/Login"));
