@@ -32,7 +32,7 @@ const initialVehicleState = {
   brandName: "",
   modelName: "",
   inventory: 0,
-  status: true,
+  status: false,
   seatLimit: 0,
   rate: 0,
   luggageCapacity: 0,
@@ -92,7 +92,7 @@ const AddVehicle = () => {
         brandName: vehicleData.brandName,
         modelName: vehicleData.modelName,
         inventory: Number(vehicleData.inventory),
-        status: Boolean(vehicleData.status),
+        active: Boolean(vehicleData.status),
         seatLimit: Number(vehicleData.seatLimit),
         rate: Number(vehicleData.rate),
         luggageCapacity: Number(vehicleData.luggageCapacity),
@@ -112,7 +112,7 @@ const AddVehicle = () => {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (data.status) {
         toast.success(editingId ? "Vehicle updated!" : "Vehicle added!");
         setVehicles([{ ...initialVehicleState }]);
         setEditingId(null);
@@ -205,14 +205,13 @@ const AddVehicle = () => {
       setUpdatingVehicleId(vehicleId);
 
       const response = await fetch(
-        "http://localhost:3232/api/vehicle/update-vehicle",
+        `http://localhost:3232/vehicle/update-vehicle/${vehicleId}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            _id: vehicleId,
             active: newStatus,
           }),
         }

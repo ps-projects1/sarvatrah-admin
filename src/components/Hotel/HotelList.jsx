@@ -507,12 +507,12 @@ const HotelList = ({
                       {selectedHotel.active ? "Active" : "Inactive"}
                     </Typography>
                   </Grid>
-                  <Grid item xs={6} md={3}>
+                  {/* <Grid item xs={6} md={3}>
                     <Typography variant="body2">
                       <strong>Total Rooms:</strong>{" "}
                       {selectedHotel.rooms?.length || 0}
                     </Typography>
-                  </Grid>
+                  </Grid> */}
                   <Grid item xs={6} md={3}>
                     <Typography variant="body2">
                       <strong>Total Images:</strong>{" "}
