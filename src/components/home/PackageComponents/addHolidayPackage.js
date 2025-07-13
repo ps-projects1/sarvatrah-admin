@@ -627,7 +627,7 @@ const AddHolidayPackage = () => {
                 />
               </div>
 
-              <div className="col-sm-4">
+              {/* <div className="col-sm-4">
                 <label className="form-label">Inventory Count</label>
                 <input
                   type="number"
@@ -638,7 +638,7 @@ const AddHolidayPackage = () => {
                     handlePackageChange("inventry", parseInt(e.target.value))
                   }
                 />
-              </div>
+              </div> */}
 
               <div className="col-sm-12">
                 <label className="form-label">Highlights</label>
@@ -768,6 +768,45 @@ const AddHolidayPackage = () => {
                 />
               </div>
 
+              {packageData.cancellationPolicyType === "refundble" && (
+                <>
+                  <div className="col-sm-3">
+                    <label className="form-label">
+                      Refundable Percentage (%)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      className="form-control"
+                      value={packageData.refundablePercentage}
+                      onChange={(e) =>
+                        handlePackageChange(
+                          "refundablePercentage",
+                          parseFloat(e.target.value)
+                        )
+                      }
+                    />
+                  </div>
+
+                  <div className="col-sm-3">
+                    <label className="form-label">Refundable Days</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="form-control"
+                      value={packageData.refundableDays}
+                      onChange={(e) =>
+                        handlePackageChange(
+                          "refundableDays",
+                          parseInt(e.target.value)
+                        )
+                      }
+                    />
+                  </div>
+                </>
+              )}
+
               <div className="col-sm-2">
                 <label className="form-label">Status</label>
                 <div>
@@ -848,7 +887,7 @@ const AddHolidayPackage = () => {
           </div>
 
           {/* Available Vehicles Section */}
-          <div className="card-body">
+          {/* <div className="card-body">
             <h4 className="card-title">Available Vehicles</h4>
             {packageData.availableVehicle.map((vehicle, index) => (
               <div key={index} className="row g-3 mb-3">
@@ -947,7 +986,7 @@ const AddHolidayPackage = () => {
                 </button>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Itinerary Section */}
           <div className="card-body">
