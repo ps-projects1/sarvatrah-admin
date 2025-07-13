@@ -16,8 +16,8 @@ const AddVehicle = React.lazy(() => import("./components/home/addVehicle"));
 const AddCategory = React.lazy(() => import("./components/home/addCategory"));
 const AddActivity = React.lazy(() => import("./components/home/addActivity"));
 const AddAdvanture = React.lazy(() => import("./components/home/addAdvanture"));
-const AddHolidayPackage = React.lazy(() =>
-  import("./components/home/addHolidayPackage")
+const PackageListing = React.lazy(() =>
+  import("./components/home/PackageComponents/PackageListing")
 );
 const AddPolicy = React.lazy(() => import("./components/home/policy"));
 const ManageDriver = React.lazy(() => import("./components/home/manageDriver"));
@@ -94,7 +94,7 @@ const routes = [
   { path: "/addCategory", element: <AddCategory /> },
   { path: "/addActivity", element: <AddActivity /> },
   { path: "/addAdvanture", element: <AddAdvanture /> },
-  { path: "/addHolidayPackage", element: <AddHolidayPackage /> },
+  { path: "/holiday-packages", element: <PackageListing /> },
   { path: "/policy", element: <AddPolicy /> },
   { path: "/manageDriver", element: <ManageDriver /> },
   { path: "/manageOffer", element: <ManageOffer /> },

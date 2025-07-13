@@ -27,7 +27,7 @@ export const MENU_ITEMS = [
   { path: "addVehicle", label: "Vehicles", icon: <DirectionsCarIcon /> },
   { path: "addCategory", label: "Categories", icon: <CategoryIcon /> },
   { path: "addAdvanture", label: "Adventures", icon: <HikingIcon /> },
-  { path: "addHolidayPackage", label: "Packages", icon: <CardTravelIcon /> },
+  { path: "holiday-packages", label: "Packages", icon: <CardTravelIcon /> },
   { path: "policy", label: "Policies", icon: <PolicyIcon /> },
   { path: "manageDriver", label: "Drivers", icon: <PeopleIcon /> },
   { path: "manageOffer", label: "Offers", icon: <LocalOfferIcon /> },
