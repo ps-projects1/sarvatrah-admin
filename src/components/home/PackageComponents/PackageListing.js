@@ -23,6 +23,12 @@ const PackageListing = () => {
   const [showForm, setShowForm] = useState(false);
   const [editPackage, setEditPackage] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+  });
 
   useEffect(() => {
     if (!showForm) fetchPackages();
@@ -51,7 +57,10 @@ const PackageListing = () => {
       const res = await axios.get(
         "http://localhost:3232/holiday/get-holiday-package"
       );
-      if (res.data.status) setPackages(res.data.data);
+      if (res.data.status) {
+        setPackages(res.data.data.holidayPackages);
+        setPagination(res.data.data.pagination); // Store pagination info
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -174,6 +183,31 @@ const PackageListing = () => {
               </TableBody>
             </Table>
           </TableContainer>
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <Box
+              mt={2}
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+            >
+              <Button
+                disabled={pagination.currentPage === 1}
+                onClick={() => fetchPackages(pagination.currentPage - 1)}
+              >
+                Previous
+              </Button>
+              <Typography mx={2}>
+                Page {pagination.currentPage} of {pagination.totalPages}
+              </Typography>
+              <Button
+                disabled={pagination.currentPage === pagination.totalPages}
+                onClick={() => fetchPackages(pagination.currentPage + 1)}
+              >
+                Next
+              </Button>
+            </Box>
+          )}
         </>
       )}
     </Box>
