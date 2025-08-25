@@ -9,7 +9,7 @@ export const fetchHotels = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${API_URL}/hotel/get-hotels`);
-      return response.data.data;
+      return response.data.data.hotels;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
@@ -62,6 +62,9 @@ export const deleteHotel = createAsyncThunk(
     try {
       await axios.delete(`${API_URL}/hotel/delete-hotel`, {
         data: { _id: hotelId },
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("user")).token}`,
+        }
       });
       return hotelId;
     } catch (error) {

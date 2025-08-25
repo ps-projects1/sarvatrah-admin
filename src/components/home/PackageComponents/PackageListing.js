@@ -38,6 +38,7 @@ const PackageListing = () => {
     const term = searchTerm.toLowerCase();
     setFiltered(
       packages.filter((pkg) => {
+        if (!pkg) return false;
         const values = [
           pkg.packageName,
           pkg.uniqueId,
@@ -45,8 +46,11 @@ const PackageListing = () => {
           pkg.selectType,
           pkg.startCity,
           ...(pkg.destinationCity || []),
-        ];
-        return values.some((val) => val?.toLowerCase().includes(term));
+        ].filter(Boolean); // Remove undefined/null values
+
+        return values.some((val) =>
+          val?.toString().toLowerCase().includes(term)
+        );
       })
     );
   }, [searchTerm, packages]);
