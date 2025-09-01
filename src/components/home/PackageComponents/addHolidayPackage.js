@@ -887,7 +887,7 @@ const AddHolidayPackage = () => {
           </div>
 
           {/* Available Vehicles Section */}
-          {/* <div className="card-body">
+          <div className="card-body">
             <h4 className="card-title">Available Vehicles</h4>
             {packageData.availableVehicle.map((vehicle, index) => (
               <div key={index} className="row g-3 mb-3">
@@ -986,7 +986,7 @@ const AddHolidayPackage = () => {
                 </button>
               </div>
             </div>
-          </div> */}
+          </div>
 
           {/* Itinerary Section */}
           <div className="card-body">
