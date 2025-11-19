@@ -11,7 +11,7 @@ const Titel = () => {
       try {
         if (id) {
           const response = await fetch(
-            `http://localhost:3232/experience/${id}`,
+            `${process.env.REACT_APP_API_BASE_URL}/experience/${id}`,
             {
               method: "GET",
               headers: {
@@ -40,7 +40,7 @@ const Titel = () => {
       title: title,
     });
     const response = await fetch(
-      `http://localhost:3232/experience?${queryParams.toString()}`,
+      `${process.env.REACT_APP_API_BASE_URL}/experience?${queryParams.toString()}`,
       {
         method: "POST",
       }

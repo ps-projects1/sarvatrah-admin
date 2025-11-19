@@ -59,7 +59,8 @@ const PackageListing = () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        "http://localhost:3232/holiday/get-holiday-package"
+        `${process.env.REACT_APP_API_BASE_URL}/holiday/get-holiday-package`
+
       );
       if (res.data.status) {
         setPackages(res.data.data.holidayPackages);

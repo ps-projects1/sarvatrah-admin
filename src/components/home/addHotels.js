@@ -124,7 +124,7 @@ const AddHotels = () => {
       const updatedFormData = JSON.stringify(roomList);
       formDataWithImages.append(`rooms`, updatedFormData);
 
-      const response = await fetch(`http://localhost:3232/inventries/hotel`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/inventries/hotel`, {
         method: "POST",
         body: formDataWithImages,
       });

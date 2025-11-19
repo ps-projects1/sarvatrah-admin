@@ -88,7 +88,8 @@ const ForgotPassword = () => {
       if (step === 1) {
         // Send verification code
         const response = await fetch(
-          "http://localhost:3232/api/admin/request-reset",
+         `${process.env.REACT_APP_API_BASE_URL}/api/admin/request-reset`
+,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -105,7 +106,8 @@ const ForgotPassword = () => {
       } else if (step === 2) {
         // Reset password
         const response = await fetch(
-          "http://localhost:3232/api/admin/reset-password",
+         `${process.env.REACT_APP_API_BASE_URL}/api/admin/reset-password`
+,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

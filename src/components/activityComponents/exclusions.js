@@ -51,7 +51,7 @@
 //     if (experienceId && experienceId.length > 0) {
 //       (async function () {
 //         const response = await fetch(
-//           `http://localhost:3232/experience/${experienceId}`,
+//           `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
 //           {
 //             method: "GET",
 //             headers: {
@@ -83,7 +83,7 @@
 //       exclusions: { short_des: short_description, detail_dec: description },
 //     };
 //     const res = await fetch(
-//       "http://localhost:3232/experience/" + experienceId,
+//       "${process.env.REACT_APP_API_BASE_URL}/experience/" + experienceId,
 //       {
 //         method: "PUT",
 //         headers: {
@@ -241,7 +241,7 @@ const Exclusions = () => {
     if (experienceId && experienceId.length > 0) {
       (async function () {
         const response = await fetch(
-          `http://localhost:3232/experience/${experienceId}`,
+          `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
           {
             method: "GET",
             headers: {
@@ -276,7 +276,8 @@ const Exclusions = () => {
       exclusions: { short_des: short_description, detail_dec: description },
     };
     const res = await fetch(
-      "http://localhost:3232/experience/" + experienceId,
+     `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`
+,
       {
         method: "PUT",
         headers: {

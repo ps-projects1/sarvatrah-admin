@@ -153,7 +153,8 @@ const AddHolidayPackage = () => {
 
   // Fetch states
   useEffect(() => {
-    axios.get("http://localhost:3232/state/get-state").then((res) => {
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/state/get-state`
+).then((res) => {
       setStates(res.data.data || []);
     });
   }, []);
@@ -162,7 +163,7 @@ const AddHolidayPackage = () => {
   useEffect(() => {
     if (selectedStateId) {
       axios
-        .get(`http://localhost:3232/city/get-city?stateId=${selectedStateId}`)
+        .get(`${process.env.REACT_APP_API_BASE_URL}/city/get-city?stateId=${selectedStateId}`)
         .then((res) => {
           setCities(res.data.data || []);
         });
@@ -427,7 +428,7 @@ const AddHolidayPackage = () => {
       images.forEach((img) => formData.append("images", img)); // or 'images[]' based on backend
 
       const response = await fetch(
-        "http://localhost:3232/holidays/createPackage",
+        `${process.env.REACT_APP_API_BASE_URL}/holidays/createPackage`,
         {
           method: "POST",
           body: formData,

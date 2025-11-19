@@ -71,7 +71,8 @@ const StartTime = () => {
     if (experienceId && experienceId.length > 0) {
       (async () => {
         const response = await fetch(
-          "http://localhost:3232/experience/" + experienceId,
+          `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`
+,
           {
             method: "GET",
             headers: {
@@ -167,8 +168,8 @@ const StartTime = () => {
       availability_detail: [...updatedRows],
     };
     const response = await fetch(
-      "http://localhost:3232/experience/updateTiming/" + experienceId,
-      {
+`${process.env.REACT_APP_API_BASE_URL}/experience/updateTiming/${experienceId}`
+,      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

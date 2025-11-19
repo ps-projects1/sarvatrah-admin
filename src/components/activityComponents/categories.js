@@ -217,7 +217,7 @@ const Categories = () => {
     if (experienceId && experienceId.length > 0) {
       (async function () {
         const response = await fetch(
-          `http://localhost:3232/experience/${experienceId}`,
+          `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
           {
             method: "GET",
             headers: {
@@ -268,7 +268,7 @@ const Categories = () => {
     );
     query.append("theme", themedata[0].label);
 
-    const response = await fetch(`http://localhost:3232/experience/${_id}`, {
+    const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/experience/${_id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

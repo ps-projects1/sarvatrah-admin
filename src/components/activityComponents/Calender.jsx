@@ -168,7 +168,8 @@ const Calendar = () => {
     }
     (async function () {
       const response = await fetch(
-        "http://localhost:3232/experience/" + experienceId,
+        `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
+
         {
           method: "GET",
           headers: {
@@ -187,7 +188,8 @@ const Calendar = () => {
   }, []);
   const getStartTIme = async () => {
     const response = await fetch(
-      "http://localhost:3232/experience/" + experienceId,
+      `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
+
       {
         method: "GET",
         headers: {
@@ -239,7 +241,7 @@ const Calendar = () => {
     };
     console.log(data, "data");
     const deleteEvets = await fetch(
-      "http://localhost:3232/experience/events/" + experienceId,
+`${process.env.REACT_APP_API_BASE_URL}/experience/events/${experienceId}`,
       {
         method: "DELETE",
         headers: {
@@ -292,7 +294,8 @@ const Calendar = () => {
   const handleBackendEventAdd = async (event) => {
     const data = event;
     const result = await fetch(
-      "http://localhost:3232/experience/events/" + experienceId,
+      `${process.env.REACT_APP_API_BASE_URL}/experience/events/${experienceId}`
+,
       {
         method: "POST",
         headers: {

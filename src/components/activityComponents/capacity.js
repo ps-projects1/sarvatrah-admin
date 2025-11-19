@@ -22,7 +22,7 @@ const Capacity = () => {
     if (experienceId && experienceId.length > 0) {
       (async function () {
         const response = await fetch(
-          "http://localhost:3232/experience/" + experienceId,
+          `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
           {
             method: "GET",
             headers: {
@@ -54,7 +54,8 @@ const Capacity = () => {
       capacity,
     };
     const response = await fetch(
-      "http://localhost:3232/experience/" + experienceId,
+      `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`
+,
       {
         method: "PUT",
         headers: {

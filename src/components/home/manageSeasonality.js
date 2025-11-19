@@ -93,7 +93,7 @@ const ManageSeasonality = () => {
           )
           .join("&");
 
-        const url = `http://localhost:3232/inventries/vehicle?${queryString}`;
+        const url = `${process.env.REACT_APP_API_BASE_URL}/inventries/vehicle?${queryString}`;
 
         const response = await fetch(url, {
           method: "POST",

@@ -17,7 +17,7 @@ const Duration = () => {
       setExperienceId(_id);
       (async function () {
         const response = await fetch(
-          `http://localhost:3232/experience/${experienceId}`,
+          `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
           {
             method: "GET",
             headers: {
@@ -61,7 +61,7 @@ const Duration = () => {
     });
 
     const response = await fetch(
-      `http://localhost:3232/experience/${experienceId}?${query.toString()}`,
+      `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}?${query.toString()}`,
       {
         method: "PUT",
         headers: {

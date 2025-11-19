@@ -31,14 +31,15 @@ const BookingCutoff = () => {
     }
     (async function () {
       const response = await fetch(
-        "http://localhost:3232/experience/" + experienceId,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+  `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
+  {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }
+);
+
       const responseJson = await response.json();
       const { predefinedTimeAllowances, allow_custom_availability } =
         responseJson;
@@ -79,7 +80,8 @@ const BookingCutoff = () => {
         },
       };
       const response = await fetch(
-        "http://localhost:3232/experience/" + experienceId,
+     `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
+
         {
           method: "PUT",
           headers: {
@@ -101,7 +103,8 @@ const BookingCutoff = () => {
       };
       console.log(data);
       const response = await fetch(
-        "http://localhost:3232/experience/" + experienceId,
+       `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
+
         {
           method: "PUT",
           headers: {

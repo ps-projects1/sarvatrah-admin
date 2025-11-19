@@ -594,7 +594,7 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
                       <img
                         src={
                           typeof image === "string"
-                            ? `http://localhost:3232/${image}`
+                            ? `${process.env.REACT_APP_API_BASE_URL}/${image}`
                             : image.path
                         }
                         alt={`Hotel ${index}`}

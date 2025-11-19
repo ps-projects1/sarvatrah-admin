@@ -52,7 +52,7 @@ const AddVehicle = () => {
   const fetchAvailableVehicles = async () => {
     try {
       const response = await fetch(
-        "http://localhost:3232/vehicle/get-vehicles",
+        `${process.env.REACT_APP_API_BASE_URL}/vehicle/get-vehicles`,
         { method: "GET" }
       );
       const data = await response.json();
@@ -99,8 +99,8 @@ const AddVehicle = () => {
       };
 
       const url = editingId
-        ? `http://localhost:3232/vehicle/update-vehicle/${editingId}`
-        : "http://localhost:3232/vehicle/add-vehicle";
+        ? `${process.env.REACT_APP_API_BASE_URL}/vehicle/update-vehicle/${editingId}`
+  : `${process.env.REACT_APP_API_BASE_URL}/vehicle/add-vehicle`;
 
       const method = editingId ? "PUT" : "POST";
 
@@ -152,7 +152,7 @@ const AddVehicle = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3232/vehicle/delete-vehicle/${id}`,
+        `${process.env.REACT_APP_API_BASE_URL}/vehicle/delete-vehicle/${id}`,
         {
           method: "DELETE",
         }
@@ -205,7 +205,7 @@ const AddVehicle = () => {
       setUpdatingVehicleId(vehicleId);
 
       const response = await fetch(
-        `http://localhost:3232/vehicle/update-vehicle/${vehicleId}`,
+        `${process.env.REACT_APP_API_BASE_URL}/vehicle/update-vehicle/${vehicleId}`,
         {
           method: "PUT",
           headers: {

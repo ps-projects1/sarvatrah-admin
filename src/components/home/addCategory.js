@@ -41,7 +41,7 @@ const AddCategory = () => {
   const handleSubmit = async () => {
     try {
       const promises = categories.map(async (category) => {
-        const url = `http://localhost:3232/inventries/categories?categoryType=${category.category}&name=${category.name}`;
+        const url = `${process.env.REACT_APP_API_BASE_URL}/inventries/categories?categoryType=${category.category}&name=${category.name}`;
         const response = await fetch(url, {
           method: "POST",
         });

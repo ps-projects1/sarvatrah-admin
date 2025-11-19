@@ -21,7 +21,7 @@ const OpeningHours = () => {
   useEffect(() => {
     (async function () {
       const data = await fetch(
-        `http://localhost:3232/experience/${experienceId}/`,
+        `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}/`,
         {
           method: "GET",
           headers: {
@@ -100,7 +100,7 @@ const OpeningHours = () => {
       availability_detail: formattedAvailability,
     };
     const response = await fetch(
-      `http://localhost:3232/experience/updateAvailability/${experienceId}`,
+      `${process.env.REACT_APP_API_BASE_URL}/experience/updateAvailability/${experienceId}`,
       {
         method: "POST",
         headers: {
@@ -1087,7 +1087,7 @@ export default OpeningHours;
 //     const data = {
 //       availability_detail: formattedAvailability,
 //     };
-//     const response = await fetch(`http://localhost:3232/experience/${_id}`, {
+//     const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/experience/${_id}`, {
 //       method: "PUT",
 //       headers: {
 //         "Content-Type": "application/json",
