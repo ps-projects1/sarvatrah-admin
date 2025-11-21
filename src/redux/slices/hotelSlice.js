@@ -8,7 +8,12 @@ export const fetchHotels = createAsyncThunk(
   "hotels/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/hotel/get-hotels`);
+      const user = JSON.parse(localStorage.getItem("user"));
+      const response = await axios.get(`${API_URL}/hotel/get-hotels`, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
       return response.data.data.hotels;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -21,10 +26,17 @@ export const addHotel = createAsyncThunk(
   async (hotelData, { rejectWithValue }) => {
     try {
       console.log("Adding hotel data:", hotelData);
+      const user = JSON.parse(localStorage.getItem("user"));
 
       const response = await axios.post(
         `${API_URL}/hotel/add-hotel`,
-        hotelData
+        hotelData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
       );
       return response.data;
     } catch (error) {
