@@ -14,6 +14,7 @@ import {
   Grid,
   CircularProgress,
 } from "@mui/material";
+import ConfirmDialog from "../../components/Common/ConfirmDialog";
 import {
   fetchHotels,
   addHotel,
@@ -29,7 +30,6 @@ import HotelList from "../../components/Hotel/HotelList";
 import HotelForm from "../../components/Hotel/HotelForm";
 import { showErrorToast, showSuccessToast } from "../../utils/toast";
 import { useDebounce } from "../../hooks/useDebounce";
-import Swal from "sweetalert2";
 
 const Hotel = () => {
   const dispatch = useDispatch();
@@ -47,6 +47,8 @@ const Hotel = () => {
   const [editingHotel, setEditingHotel] = useState(null);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [hotelToDelete, setHotelToDelete] = useState(null);
 
   const [availableStates, setAvailableStates] = useState([]);
   const [availableCities, setAvailableCities] = useState([]);
@@ -113,20 +115,24 @@ const Hotel = () => {
     setOpenEditModal(true);
   };
 
-  const handleDelete = async (hotelId) => {
-    if (window.confirm("Are you sure you want to delete this hotel?")) {
-      try {
-        await dispatch(deleteHotel(hotelId));
-        showSuccessToast("Hotel deleted successfully");
-      } catch {
-        showErrorToast("Failed to delete hotel");
-      }
+  const handleDelete = (hotelId) => {
+    setHotelToDelete(hotelId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await dispatch(deleteHotel(hotelToDelete));
+      showSuccessToast("Hotel deleted successfully");
+    } catch {
+      showErrorToast("Failed to delete hotel");
+    } finally {
+      setHotelToDelete(null);
     }
   };
 
   const handleAddHotel = async (newHotel) => {
     try {
-      console.log(newHotel);
       dispatch(addHotel(newHotel))
         .then((data) => {
           if (data.error) {
@@ -160,18 +166,10 @@ const Hotel = () => {
   const handleStatusToggle = async (hotelId, newStatus) => {
     try {
       if (!newStatus) {
-        const result = await Swal.fire({
-          title: "Deactivate Hotel?",
-          text: "Are you sure you want to deactivate this hotel? This may affect bookings and visibility.",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#d33",
-          cancelButtonColor: "#3085d6",
-          confirmButtonText: "Yes, deactivate it!",
-          cancelButtonText: "Cancel",
-        });
-
-        if (!result.isConfirmed) return;
+        const confirmed = window.confirm(
+          "Are you sure you want to deactivate this hotel? This may affect bookings and visibility."
+        );
+        if (!confirmed) return;
       }
 
       setUpdatingHotelId(hotelId);
@@ -192,7 +190,6 @@ const Hotel = () => {
       );
     } catch (error) {
       showErrorToast("Failed to update hotel status");
-      console.error("Status update error:", error);
     } finally {
       setUpdatingHotelId(null);
     }
@@ -314,6 +311,17 @@ const Hotel = () => {
           )}
         </Box>
       </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Hotel"
+        message="Are you sure you want to delete this hotel? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

@@ -1,12 +1,9 @@
 import {
   Button,
-  FormControlLabel,
-  FormGroup,
-  Switch,
   TextField,
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
@@ -41,10 +38,9 @@ export const formats = [
 ];
 
 const Inclusions = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const localId = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localId ? localId : "");
+  const [experienceId] = useState(localId ? localId : "");
   const [short_description, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
   useEffect(() => {
@@ -73,7 +69,7 @@ const Inclusions = () => {
       alert("please add titel and categories");
       navigate("/titel");
     }
-  }, []);
+  }, [experienceId, navigate]);
   const goBack = () => {
     navigate("/description"); // Change "/location" to the desired location path
   };

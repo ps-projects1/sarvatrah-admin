@@ -2,34 +2,17 @@ import {
   Autocomplete,
   Box,
   Button,
-  Checkbox,
-  Table,
   FormControlLabel,
   Modal,
-  Paper,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
   TextField,
   Typography,
   Switch,
 } from "@mui/material";
-import React, { useState, useEffect } from "react";
+import React from "react";
 
-function createData(id, categories, times, setDefault, buttons) {
-  return { id, categories, times, setDefault, buttons };
-}
 
-const rows = [
-  createData(
-    "Standard rate | #15925032",
-    "2 pricing categories",
-    "All start times",
-    "Set as default",
-    "Edit/ Remove/ Clone"
-  ),
-];
+
+
 
 const style = {
   marginTop: "10px",

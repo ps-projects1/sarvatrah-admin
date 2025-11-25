@@ -2,7 +2,6 @@ import {
   Autocomplete,
   Box,
   Button,
-  Checkbox,
   Table,
   FormControlLabel,
   Modal,
@@ -15,7 +14,7 @@ import {
   Typography,
   Switch,
 } from "@mui/material";
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 function createData(id, categories, times, setDefault, buttons) {
   return { id, categories, times, setDefault, buttons };

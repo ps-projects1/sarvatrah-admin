@@ -12,6 +12,7 @@ import "./assets/css/globalstyles.css";
 const LoginPage = React.lazy(() => import("./pages/Auth/Login"));
 const Dashboard = React.lazy(() => import("./components/home/dashboard"));
 const Hotel = React.lazy(() => import("./pages/Hotel/Hotel"));
+const City = React.lazy(() => import("./pages/City/City"));
 const AddVehicle = React.lazy(() => import("./components/home/addVehicle"));
 const AddCategory = React.lazy(() => import("./components/home/addCategory"));
 const AddActivity = React.lazy(() => import("./components/home/addActivity"));
@@ -90,6 +91,7 @@ const Calender = React.lazy(() =>
 const routes = [
   { path: "/dashboard", element: <Dashboard /> },
   { path: "/hotel", element: <Hotel /> },
+  { path: "/city", element: <City /> },
   { path: "/addVehicle", element: <AddVehicle /> },
   { path: "/addCategory", element: <AddCategory /> },
   { path: "/addActivity", element: <AddActivity /> },

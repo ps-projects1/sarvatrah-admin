@@ -1,6 +1,6 @@
 import { Autocomplete, Button, TextField } from "@mui/material";
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 // const categories = [
 //   { label: "ATV / quad tour" },
 //   { label: "Adrenaline and extreme" },
@@ -186,7 +186,6 @@ const categories = [
   "Zoo / aquarium",
 ];
 const Categories = () => {
-  const location = useLocation();
   const navigate = useNavigate();
 
   const theme = [
@@ -211,7 +210,7 @@ const Categories = () => {
   const [categoriesdata, setCategories] = useState([]);
   const [themedata, setTheme] = useState([]);
   const _id = localStorage.getItem("_id") || "";
-  const [experienceId, setExperienceId] = useState(_id);
+  const [experienceId] = useState(_id);
 
   useEffect(() => {
     if (experienceId && experienceId.length > 0) {
@@ -246,7 +245,7 @@ const Categories = () => {
       alert("please add titel and categories");
       navigate("/titel");
     }
-  }, []);
+  }, [experienceId, navigate]);
   const submit = async () => {
     if (!categoriesdata.length) {
       alert("Please enter the categories");

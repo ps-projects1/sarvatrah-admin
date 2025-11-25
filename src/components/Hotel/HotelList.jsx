@@ -49,8 +49,6 @@ const HotelList = ({
   updatingHotelId,
 }) => {
   const [editFormData, setEditFormData] = React.useState(null);
-  const [error, setError] = React.useState(null);
-  const [success, setSuccess] = React.useState(null);
 
   React.useEffect(() => {
     if (editingHotel) {
@@ -59,12 +57,8 @@ const HotelList = ({
   }, [editingHotel]);
 
   const handleView = (hotel) => {
-    try {
-      setSelectedHotel(hotel);
-      setOpenViewModal(true);
-    } catch (err) {
-      setError("Failed to view hotel details");
-    }
+    setSelectedHotel(hotel);
+    setOpenViewModal(true);
   };
 
   const handleCloseViewModal = () => {
@@ -86,41 +80,22 @@ const HotelList = ({
   };
 
   const handleRoomChange = (index, field, value) => {
-    try {
-      const updatedRooms = [...editFormData.rooms];
-      updatedRooms[index][field] = value;
-      setEditFormData({
-        ...editFormData,
-        rooms: updatedRooms,
-      });
-    } catch (err) {
-      setError("Failed to update room information");
-    }
+    const updatedRooms = [...editFormData.rooms];
+    updatedRooms[index][field] = value;
+    setEditFormData({
+      ...editFormData,
+      rooms: updatedRooms,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      await handleUpdateHotel(editFormData);
-      setSuccess("Hotel updated successfully!");
-      handleCloseEditModal();
-    } catch (err) {
-      setError("Failed to update hotel");
-    }
+    await handleUpdateHotel(editFormData);
+    handleCloseEditModal();
   };
 
   const handleDeleteWithErrorHandling = async (hotelId) => {
-    try {
-      await handleDelete(hotelId);
-      setSuccess("Hotel deleted successfully!");
-    } catch (err) {
-      setError("Failed to delete hotel");
-    }
-  };
-
-  const handleCloseAlert = () => {
-    setError(null);
-    setSuccess(null);
+    await handleDelete(hotelId);
   };
 
   if (loading) {

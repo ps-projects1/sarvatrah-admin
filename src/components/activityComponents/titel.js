@@ -5,7 +5,7 @@ const Titel = () => {
   const [title, setTitle] = useState("");
   const navigate = useNavigate(); // Move useNavigate outside the function
   const _id = localStorage.getItem("_id");
-  const [id, setID] = useState(_id);
+  const [id] = useState(_id);
   useEffect(() => {
     (async function () {
       try {
@@ -27,7 +27,7 @@ const Titel = () => {
         console.error("Error fetching data:", error);
       }
     })();
-    //fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const createExperience = async () => {
     if (!title) return;

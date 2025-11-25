@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { formatDate } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -13,7 +12,6 @@ import {
   Modal,
   Radio,
   RadioGroup,
-  Switch,
   TextField,
   Typography,
   Select,
@@ -77,17 +75,6 @@ const daysArray = [
     value: "sa",
   },
 ];
-const buttonStyle = {
-  width: "4%",
-  height: "34px",
-  border: "1px solid black",
-  borderRadius: "100%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  margin: "0 5px",
-};
 
 const RecurringTypes = {
   WEEKLY: "weekly",
@@ -96,14 +83,11 @@ const RecurringTypes = {
   MONTHLY_SELECTED_DAYS: "monthly_selected_days",
 };
 
-let eventGuid = 0;
 let todayStr = new Date().toISOString().replace(/T.*$/, "");
 
 const todayDate = new Date();
 
-function createEventId() {
-  return String(eventGuid++);
-}
+
 const monthArray = [
   "January",
   "February",
@@ -121,8 +105,8 @@ const monthArray = [
 
 const Calendar = () => {
   const localId = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localId ? localId : null);
-  const [weekendsVisible, setWeekendsVisible] = useState(true);
+  const [experienceId] = useState(localId ? localId : null);
+  const [weekendsVisible] = useState(true);
   const [currentEvents, setCurrentEvents] = useState([]);
   const [open, setOpen] = React.useState(false);
   const [blackOut, setBlackOut] = React.useState(false);
@@ -132,17 +116,9 @@ const Calendar = () => {
   const [selectedBlackout, setSelectedBlackout] = useState(
     "Happen between selected dates"
   );
-  const [participant, setParticipant] = useState({
-    minimum: 1,
-    maximum: 100,
-  });
-  const [experienceTiming, setExperienceTiming] = useState({
-    startTime: "",
-    endTime: "",
-  });
+ 
+ 
   const [selectedDate, setSelectedDate] = useState(todayDate);
-  const [isEventAllTime, setIsEventAllTime] = useState(false);
-  const [eventType, setEventType] = useState(RecurringTypes.WEEKLY);
   const [startTime, setStartTime] = useState([]);
   const navigate = useNavigate();
   const handleOpen = () => setOpen(true);
@@ -185,6 +161,7 @@ const Calendar = () => {
       }
     })();
     getStartTIme();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const getStartTIme = async () => {
     const response = await fetch(
@@ -214,9 +191,7 @@ const Calendar = () => {
     setSelectedBlackout(newValue);
   };
 
-  const handleWeekendsToggle = () => {
-    setWeekendsVisible(!weekendsVisible);
-  };
+
 
   const handleDateSelect = (selectInfo) => {
     handleOpen();
@@ -233,9 +208,7 @@ const Calendar = () => {
   };
   const deleteEvent = async () => {
     setDeleteEventModal(false);
-    const events = currentEvents.filter(
-      (event) => event._id !== currentSelectedInfo.event._id
-    );
+    
     const data = {
       calenderEvnetId: currentSelectedInfo.event?.extendedProps?._id,
     };
@@ -255,9 +228,7 @@ const Calendar = () => {
     setCurrentEvents(response);
     // setCurrentEvents(events);
   };
-  const handleEvents = (events) => {
-    setCurrentEvents(events);
-  };
+ 
 
   const renderEventContent = (eventInfo) => (
     <>
@@ -271,10 +242,7 @@ const Calendar = () => {
       </i>
     </>
   );
-  const calendarStyle = {
-    maxWidth: "100%",
-    margin: "auto",
-  };
+
   const handleEventAdd = (event) => {};
   const handleOnFormSubmit = async () => {
     const data = currentEvents;
@@ -285,12 +253,7 @@ const Calendar = () => {
     navigate("/pricingCategories");
   };
 
-  const handleParticipantChange = (event, type) => {
-    setParticipant((prev) => ({
-      ...prev,
-      [type]: event.target.value,
-    }));
-  };
+ 
   const handleBackendEventAdd = async (event) => {
     const data = event;
     const result = await fetch(
@@ -316,6 +279,7 @@ const Calendar = () => {
       if (time && formVal.start_time.includes(time._id)) {
         return true;
       }
+      return false;
     });
     let startHoursArr = [];
     let startMinutesArr = [];
@@ -430,6 +394,9 @@ const Calendar = () => {
         };
         handleBackendEventAdd(betweenEvent);
         setCurrentEvents([betweenEvent]);
+        break;
+      default:
+        break;
     }
   };
 
@@ -1692,9 +1659,9 @@ const Calendar = () => {
                             value={currentSelectedStartTime}
                           >
                             {startTime && startTime.length > 0
-                              ? startTime.map((item, index) => {
-                                  <Radio key={index} value={item} />;
-                                })
+                              ? startTime.map((item, index) => (
+                                  <Radio key={index} value={item} />
+                                ))
                               : null}
                           </RadioGroup>
                         }
@@ -1765,9 +1732,9 @@ const Calendar = () => {
                             value={currentSelectedStartTime}
                           >
                             {startTime && startTime.length > 0
-                              ? startTime.map((item, index) => {
-                                  <Radio key={index} value={item} />;
-                                })
+                              ? startTime.map((item, index) => (
+                                  <Radio key={index} value={item} />
+                                ))
                               : null}
                           </RadioGroup>
                         }

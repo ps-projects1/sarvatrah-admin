@@ -6,10 +6,11 @@ import {
   ListItemText,
   Box,
 } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import HotelIcon from "@mui/icons-material/Hotel";
+import LocationCityIcon from "@mui/icons-material/LocationCity";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import CategoryIcon from "@mui/icons-material/Category";
 import HikingIcon from "@mui/icons-material/Hiking";
@@ -24,6 +25,7 @@ import CopyrightIcon from "@mui/icons-material/Copyright";
 export const MENU_ITEMS = [
   { path: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
   { path: "hotel", label: "Hotels", icon: <HotelIcon /> },
+  { path: "city", label: "Cities", icon: <LocationCityIcon /> },
   { path: "addVehicle", label: "Vehicles", icon: <DirectionsCarIcon /> },
   { path: "addCategory", label: "Categories", icon: <CategoryIcon /> },
   { path: "addAdvanture", label: "Adventures", icon: <HikingIcon /> },
@@ -42,7 +44,6 @@ export const MENU_ITEMS = [
 
 export default function SidebarMenu({ open, handleNavigation }) {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   const theme = useTheme();
 
   return (

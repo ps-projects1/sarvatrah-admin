@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
-import Box from '@mui/material/Box';
-import TextField from '@mui/material/TextField';
-import Autocomplete from '@mui/material/Autocomplete';
-import Cookies from 'js-cookie';
-import { FormControl, FormControlLabel, InputLabel, MenuItem, Radio, RadioGroup, Select, Switch } from '@mui/material';
+import { FormControl, FormControlLabel, Radio, RadioGroup} from '@mui/material';
 
 const AddPolicy = () => {
     const [formData, setFormData] = useState({

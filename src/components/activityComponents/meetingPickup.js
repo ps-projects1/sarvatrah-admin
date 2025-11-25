@@ -4,17 +4,15 @@ import {
   FormControlLabel,
   Radio,
   RadioGroup,
-  TextField,
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 const MeetingPickup = () => {
   const [meetingOption, setMeetingOption] = useState("meet_on_location");
-  const location = useLocation();
   const navigate = useNavigate();
   const localId = localStorage.getItem("_id");
 
-  const [experienceId, setExperienceId] = useState(localId ? localId : "");
+  const [experienceId] = useState(localId ? localId : "");
   useEffect(() => {
     if (experienceId && experienceId.length > 0) {
       (async function () {
@@ -41,7 +39,7 @@ const MeetingPickup = () => {
       alert("Please fill in all the fields");
       return;
     }
-  }, []);
+  }, [experienceId]);
   const goBack = () => {
     navigate("/pricingCategories");
   };

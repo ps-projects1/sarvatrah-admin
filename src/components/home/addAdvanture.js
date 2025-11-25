@@ -1,20 +1,14 @@
 import React from "react";
 import "../../assets/css/app.min.css";
 import "../../assets/css/bootstrap.min.css";
-import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import { useState } from "react";
-// import jwt from 'react-jwt';
-import Cookies from "js-cookie";
 import {
   FormControl,
   FormControlLabel,
-  InputLabel,
-  MenuItem,
   Radio,
   RadioGroup,
-  Select,
 } from "@mui/material";
 
 const AddAdvanture = () => {
@@ -90,6 +84,14 @@ const AddAdvanture = () => {
         defaultAge = "60+";
       }
 
+      // Build age array from all selected age types
+      const ageArray = [];
+      Object.keys(updatedAgeTypes).forEach((ageType) => {
+        if (updatedAgeTypes[ageType]) {
+          ageArray.push(ageType === type ? defaultAge : prevData.age[ageType] || "");
+        }
+      });
+
       return {
         ...prevData,
         ageTypes: updatedAgeTypes,
@@ -99,7 +101,7 @@ const AddAdvanture = () => {
         },
         unEligibility: {
           ...prevData.unEligibility,
-          age: updatedAgeTypes[type] ? defaultAge : "",
+          age: ageArray,
         },
       };
     });
@@ -107,18 +109,27 @@ const AddAdvanture = () => {
 
   const handleAgeInputChange = (type, value) => {
     setFormData((prevData) => {
-      const updatedUnEligibility = {
-        ...prevData.unEligibility,
-        age: value.trim(), // Set the value directly
+      // Update the age object with the new value
+      const updatedAge = {
+        ...prevData.age,
+        [type]: value.trim(),
       };
+
+      // Build age array from all selected age types
+      const ageArray = [];
+      Object.keys(prevData.ageTypes).forEach((ageType) => {
+        if (prevData.ageTypes[ageType]) {
+          ageArray.push(updatedAge[ageType] || "");
+        }
+      });
 
       return {
         ...prevData,
-        age: {
-          ...prevData.age,
-          [type]: value.trim(),
+        age: updatedAge,
+        unEligibility: {
+          ...prevData.unEligibility,
+          age: ageArray,
         },
-        unEligibility: updatedUnEligibility,
       };
     });
   };
@@ -144,22 +155,6 @@ const AddAdvanture = () => {
     });
   };
 
-  // const handleIncludeExcludeChange = (key, value) => {
-  //   setFormData((prevData) => ({
-  //     ...prevData,
-  //     [key]: value.map((item) => ({ label: item })), // Format the values to match Autocomplete structure
-  //   }));
-  // };
-
-  // const handleImageChange = (event) => {
-  //   const files = event.target.files;
-  //   const imagesArray = Array.from(files);
-
-  //   setFormData((prevData) => ({
-  //     ...prevData,
-  //     images: imagesArray,
-  //   }));
-  // };
 
   const handleAddVehicle = () => {
     setFormData((prevData) => ({
@@ -187,63 +182,108 @@ const AddAdvanture = () => {
     }));
   };
 
-  const handleThemeImagesChange = (event) => {
-    const files = event.target.files;
-    const themeImagesArray = Array.from(files);
-    setFormData((prevData) => ({
-      ...prevData,
-      themeImages: themeImagesArray,
-    }));
-  };
+
 
   const handleSubmit = async () => {
     try {
-      // Constructing query parameters
-      const queryParams = new URLSearchParams();
+      // Validate required fields
+      if (!formData.image) {
+        alert("Please select an image for the adventure");
+        return;
+      }
+
+      // Creating form data and appending all fields
+      const formDataWithImages = new FormData();
+
+      // Append the image file with the correct field name
+      formDataWithImages.append("file", formData.image);
+
+      // Append all other fields to FormData
       Object.entries(formData).forEach(([key, value]) => {
-        // Exclude image and themeImages from query parameters
-        if (key !== "file" && key !== "subfile") {
+        if (key !== "image" && key !== "file" && key !== "subfile") {
           if (
             key === "availableVehicle" ||
             key === "unEligibility" ||
             key === "include" ||
             key === "exclude" ||
-            key === "availableLanguage"
+            key === "availableLanguage" ||
+            key === "ageTypes" ||
+            key === "age"
           ) {
             // Convert objects and arrays to JSON strings
-            queryParams.append(key, JSON.stringify(value));
-          } else {
-            queryParams.append(key, value);
+            formDataWithImages.append(key, JSON.stringify(value));
+          } else if (value !== null && value !== undefined) {
+            formDataWithImages.append(key, value);
           }
         }
       });
 
-      // Creating form data and appending the image
-      const formDataWithImages = new FormData();
-      formDataWithImages.append("file", formData.image);
+      // Debug: Log what's being sent
+      console.log("Submitting adventure with image:", formData.image?.name);
 
-      // Appending themeImages to form data
-      // formData.themeImages.forEach((themeImage, index) => {
-      //   formDataWithImages.append(`subfile[${index}]`, themeImage);
-      // });
-
+      const user = JSON.parse(localStorage.getItem("user"));
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/advanture/?${queryParams.toString()}`,
+        `${process.env.REACT_APP_API_BASE_URL}/advanture/`,
         {
           method: "POST",
           headers: {
-            // 'Cookie': `roomInfo=${token}`,
+            "Authorization": `Bearer ${user?.token}`,
           },
           body: formDataWithImages,
         }
       );
+
+      const data = await response.json();
+      console.log("Adventure response:", data);
+
       if (response.ok) {
         alert("Advanture added successfully");
+        // Reset form
+        setFormData({
+          packageName: "",
+          packageDuration: "",
+          availableVehicle: [{ vehicleType: "", price: "" }],
+          groupSize: "",
+          include: [],
+          exclude: [],
+          startLocation: "",
+          advantureLocation: "",
+          discount: "",
+          price: "",
+          overview: "",
+          mapLink: "",
+          unEligibility: { age: [], diseases: [] },
+          availableSlot: "",
+          availableLanguage: [],
+          cancellationPolicy: "",
+          highlight: "",
+          image: null,
+          pickUpAndDrop: false,
+          pickUpOnly: false,
+          dropOnly: false,
+          pickUpLocation: "",
+          dropLocation: "",
+          pickUpAndDropPrice: "",
+          pickUpOnlyPrice: "",
+          dropOnlyPrice: "",
+          ageTypes: {
+            adult: false,
+            children: false,
+            senior: false,
+          },
+          age: {
+            adult: "",
+            children: "",
+            senior: "",
+          },
+        });
       } else {
-        console.error("Failed to add Advanture");
+        console.error("Failed to add Advanture:", data);
+        alert(data.error || data.message || "Failed to add Advanture");
       }
     } catch (error) {
       console.error("Error:", error);
+      alert("An error occurred while adding adventure");
     }
   };
 

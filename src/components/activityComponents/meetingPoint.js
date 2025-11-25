@@ -12,18 +12,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-// import { DataGrid, GridRowsProp, GridColDef } from '@mui/x-data-grid';
-
-function createData(titel, address, buttons) {
-  return { titel, address, buttons };
-}
-
-const rows = [createData("mota-varaccha", "mota-varacha", "Edit/Delete")];
+import { useNavigate } from "react-router-dom";
 
 const style = {
   marginTop: "10px",
@@ -44,9 +34,8 @@ const style = {
 
 const MeetingPoint = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const localId = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localId ? localId : "");
+  const [experienceId] = useState(localId ? localId : "");
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -101,11 +90,6 @@ const MeetingPoint = () => {
             },
           ]);
         }
-        // if (!traveller_facilty) {
-        //   setMeetingOption("meet_on_location");
-        // } else {
-        //   setMeetingOption(traveller_facilty);
-        // }
       })();
       return;
     }
@@ -113,7 +97,7 @@ const MeetingPoint = () => {
       alert("Please fill in all the fields");
       return;
     }
-  }, []);
+  }, [experienceId]);
   const goBack = () => {
     navigate("/meetingPickup");
   };

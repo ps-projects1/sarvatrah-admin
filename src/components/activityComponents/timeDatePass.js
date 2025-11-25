@@ -4,16 +4,14 @@ import {
   FormControlLabel,
   Radio,
   RadioGroup,
-  TextField,
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 const TimeDatePass = () => {
   const [type, setType] = useState("date_time");
-  const location = useLocation();
   const navigate = useNavigate();
   const localId = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localId ? localId : "");
+  const [experienceId] = useState(localId ? localId : "");
   useEffect(() => {
     if (experienceId && experienceId.length > 0) {
       (async function () {
@@ -46,6 +44,7 @@ const TimeDatePass = () => {
       navigate("/titel");
       return;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const goBack = () => {
     navigate("/videos");

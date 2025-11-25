@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import "../../assets/css/app.min.css";
 import "../../assets/css/bootstrap.min.css";
 import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
 import {
   FormControlLabel,
   Switch,
@@ -13,9 +11,7 @@ import {
 } from "@mui/material";
 import { Edit, Delete, Visibility } from "@mui/icons-material";
 import toast, { Toaster } from "react-hot-toast";
-import Swal from "sweetalert2";
-import { useDispatch } from "react-redux";
-import { showSuccessToast } from "../../utils/toast";
+import ConfirmDialog from "../Common/ConfirmDialog";
 
 const VEHICLE_TYPES = [
   { label: "Sedan" },
@@ -44,6 +40,8 @@ const AddVehicle = () => {
   const [editingId, setEditingId] = useState(null);
   const [isViewing, setIsViewing] = useState(false);
   const [viewingVehicle, setViewingVehicle] = useState(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [vehicleToDelete, setVehicleToDelete] = useState(null);
 
   useEffect(() => {
     fetchAvailableVehicles();
@@ -51,9 +49,15 @@ const AddVehicle = () => {
 
   const fetchAvailableVehicles = async () => {
     try {
+      const user = JSON.parse(localStorage.getItem("user"));
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/vehicle/get-vehicles`,
-        { method: "GET" }
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${user?.token}`,
+          },
+        }
       );
       const data = await response.json();
       if (data.status) {
@@ -63,7 +67,6 @@ const AddVehicle = () => {
       }
     } catch (error) {
       toast.error("Failed to fetch vehicles");
-      console.error("Error:", error);
     }
   };
 
@@ -75,9 +78,7 @@ const AddVehicle = () => {
     });
   };
 
-  const addVehicle = () => {
-    setVehicles((prev) => [...prev, { ...initialVehicleState }]);
-  };
+  
 
   const removeVehicle = (index) => {
     if (vehicles.length <= 1) return;
@@ -104,15 +105,19 @@ const AddVehicle = () => {
 
       const method = editingId ? "PUT" : "POST";
 
+      const user = JSON.parse(localStorage.getItem("user"));
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${user?.token}`,
+        },
         body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
-      if (data.status) {
+      if (response.ok && (data.status || data.success)) {
         toast.success(editingId ? "Vehicle updated!" : "Vehicle added!");
         setVehicles([{ ...initialVehicleState }]);
         setEditingId(null);
@@ -123,7 +128,6 @@ const AddVehicle = () => {
       }
     } catch (error) {
       toast.error("An error occurred");
-      console.error("Error:", error);
     }
   };
 
@@ -143,18 +147,23 @@ const AddVehicle = () => {
         luggageCapacity: vehicle.luggageCapacity,
       },
     ]);
-    // window.scrollTo(0, 0);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this vehicle?"))
-      return;
+  const handleDelete = (id) => {
+    setVehicleToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
 
+  const confirmDelete = async () => {
     try {
+      const user = JSON.parse(localStorage.getItem("user"));
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/vehicle/delete-vehicle/${id}`,
+        `${process.env.REACT_APP_API_BASE_URL}/vehicle/delete-vehicle/${vehicleToDelete}`,
         {
           method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${user?.token}`,
+          },
         }
       );
       const data = await response.json();
@@ -167,7 +176,8 @@ const AddVehicle = () => {
       }
     } catch (error) {
       toast.error("Delete failed");
-      console.error("Error:", error);
+    } finally {
+      setVehicleToDelete(null);
     }
   };
 
@@ -188,28 +198,22 @@ const AddVehicle = () => {
   const handleStatusToggle = async (vehicleId, newStatus) => {
     try {
       if (!newStatus) {
-        const result = await Swal.fire({
-          title: "Deactivate Vehicle?",
-          text: "Are you sure you want to deactivate this vehicle? This may affect bookings and visibility.",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#d33",
-          cancelButtonColor: "#3085d6",
-          confirmButtonText: "Yes, deactivate it!",
-          cancelButtonText: "Cancel",
-        });
-
-        if (!result.isConfirmed) return;
+        const confirmed = window.confirm(
+          "Are you sure you want to deactivate this vehicle? This may affect bookings and visibility."
+        );
+        if (!confirmed) return;
       }
 
       setUpdatingVehicleId(vehicleId);
 
+      const user = JSON.parse(localStorage.getItem("user"));
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/vehicle/update-vehicle/${vehicleId}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${user?.token}`,
           },
           body: JSON.stringify({
             active: newStatus,
@@ -219,15 +223,13 @@ const AddVehicle = () => {
 
       if (!response.ok) throw new Error("Failed to update vehicle");
 
-      const result = await response.json();
 
       toast.success(
         `Vehicle ${newStatus ? "activated" : "deactivated"} successfully`
       );
 
-      fetchAvailableVehicles(); // ✅ refresh vehicle list
+      fetchAvailableVehicles();
     } catch (error) {
-      console.error("Status update error:", error);
       toast.error("Failed to update vehicle status");
     } finally {
       setUpdatingVehicleId(null);
@@ -435,6 +437,17 @@ const AddVehicle = () => {
         </div>
       )}
 
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Vehicle"
+        message="Are you sure you want to delete this vehicle? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
+
       <Toaster position="top-center" reverseOrder={false} />
     </div>
   );
@@ -565,11 +578,6 @@ const VehicleForm = ({ index, vehicle, onChange, onRemove, showRemove }) => (
   </div>
 );
 
-const FormField = ({ label, className, component }) => (
-  <div className={className}>
-    <label className="form-label">{label}</label>
-    {component}
-  </div>
-);
+
 
 export default AddVehicle;

@@ -1,15 +1,13 @@
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import { Box, Button, Grid, IconButton, Paper } from "@mui/material";
+import {  Button, Grid, IconButton, Paper } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
 
 const Photos = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const localId = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localId ? localId : "");
+  const [experienceId] = useState(localId ? localId : "");
   const [photos, setPhotos] = useState([]);
   const [photoFile, setPhotoFile] = useState([]);
 
@@ -39,7 +37,7 @@ const Photos = () => {
       alert("please add titel and categories");
       navigate("/titel");
     }
-  }, []);
+  }, [experienceId,navigate]);
   const submit = async () => {
     if (photos.length === 0) {
       alert("please add photos");
@@ -126,19 +124,7 @@ const Photos = () => {
   };
   
 
-  const resizeImage = (imgEl, wantedWidth) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    const aspect = imgEl.width / imgEl.height;
-
-    canvas.width = wantedWidth;
-    canvas.height = wantedWidth / aspect;
-
-    ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL();
-  };
-
+ 
   return (
     <div
       style={{
@@ -256,6 +242,7 @@ const Photos = () => {
                   <img
                     src={item?.path}
                     height="100%"
+                    alt="Uploaded content"
                     width="100%"
                     style={{ maxHeight: "300px" }}
                   />

@@ -11,17 +11,16 @@ import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 const BookingCutoff = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [selectedOption, setSelectedOption] = useState(bookingCutoff[0]);
   const [showTimeSection, setShowTimeSection] = useState(false);
   const [timingOptions, setTimingOptions] = useState("date");
   const [dateTime, setDateTime] = useState("");
   const [date, setDate] = useState();
   const localId = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localId ? localId : "");
+  const [experienceId] = useState(localId ? localId : "");
 
   useEffect(() => {
     if (!experienceId && experienceId.length === 0) {
@@ -59,12 +58,7 @@ const BookingCutoff = () => {
         setDateTime(responseJson.customTimeAllowance.value);
       }
     })();
-  }, []);
-  const handleRadioChange = (event) => {
-    console.log(event.target.value);
-    setSelectedOption(event.target.value);
-    setShowTimeSection(event.target.value === "date");
-  };
+  }, [experienceId, navigate]);
   const goBack = () => {
     navigate("/openingHours");
   };
@@ -411,24 +405,3 @@ const bookingCutoff = [
     value: "custom",
   },
 ];
-const bookingCutoffMap = {
-  rightUpUntilStart: "I take booking right up until the start of the activity",
-  min15Before: "15 minutes before start time",
-  min30Before: "30 minutes before start time",
-  hour1Before: "1 hour before start time",
-  hour2Before: "2 hours before start time",
-  hour3Before: "3 hours before start time",
-  hour4Before: "4 hours before start time",
-  hour8Before: "8 hours before start time",
-  day1Before: "1 day before start time",
-  day2Before: "2 days before start time",
-  day3Before: "3 days before start time",
-  day4Before: "4 days before start time",
-  day5Before: "5 days before start time",
-  day6Before: "6 days before start time",
-  week1Before: "1 week before start time",
-  week2Before: "2 weeks before start time",
-  week4Before: "4 weeks before start time",
-  week8Before: "8 weeks before start time",
-  custom: "I want to define my own booking cutoff",
-};

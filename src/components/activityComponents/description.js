@@ -1,6 +1,6 @@
 import { Button, TextField } from "@mui/material";
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
@@ -35,12 +35,11 @@ export const formats = [
 ];
 
 const Description = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
   const localId = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localId ? localId : "");
+  const [experienceId] = useState(localId ? localId : "");
   useEffect(() => {
     if (experienceId && experienceId.length > 0) {
       (async function () {
@@ -68,7 +67,7 @@ const Description = () => {
       navigate("/titel");
       return;
     }
-  }, []);
+  }, [experienceId, navigate]);
   const submit = async () => {
     if (!shortDescription) {
       alert("Please enter the short description");

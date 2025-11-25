@@ -34,25 +34,12 @@ const PricingCategories = () => {
   const navigate = useNavigate();
   const { _id } = location.state ? location.state : {};
   const localID = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localID ? localID : "");
+  const [experienceId] = useState(localID || "");
   const [open, setOpen] = React.useState(false);
 
   const [isSwitchOn, setIsSwitchOn] = useState(false);
-  const [travelling_facility, setTravelling_facility] = useState({
-    pick_up_and_drop: {
-      price: 0,
-    },
-    pick_up_only: {
-      price: 0,
-    },
-    drop_only: {
-      price: 0,
-    },
-  });
   const [rows, setRows] = useState();
   const [temp_Id, setTemp_Id] = useState(1);
-
-  const [showPickupDrop, setShowPickupDrop] = useState(true);
 
   const [formData, setFormData] = useState({
     _id: temp_Id,
@@ -69,9 +56,7 @@ const PricingCategories = () => {
   };
   const handleClose = () => setOpen(false);
 
-  const togglePickupDrop = () => {
-    setShowPickupDrop(!showPickupDrop);
-  };
+  
 
   useEffect(() => {
     if (experienceId && experienceId?.length > 0) {
@@ -91,7 +76,6 @@ const PricingCategories = () => {
         if (!pricing && pricing?.length === 0) {
           return;
         }
-        console.log(pricing, "pricing");
         setRows(pricing);
       })();
       return;
@@ -100,6 +84,7 @@ const PricingCategories = () => {
       navigate("/titel");
       return;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const goBack = () => {
     navigate("/calendar");
@@ -130,9 +115,7 @@ const PricingCategories = () => {
     handleClose();
   };
 
-  const handlePricingSubmit = () => {
-    console.log(rows);
-  };
+  
   const submit = async () => {
     if (rows.length === 0) {
       alert("Please add atleast one pricing category");
@@ -147,7 +130,6 @@ const PricingCategories = () => {
         price: row.price,
       };
     });
-    const removedNulls = pricingRows.filter((row, index) => index !== 0);
     const data = {
       pricing: pricingRows,
     };
@@ -167,24 +149,7 @@ const PricingCategories = () => {
     navigate("/meetingPickup", { state: { ...data2 } });
   };
 
-  const handleTravelSubmit = async () => {
-    const data = {
-      travelling_facility: travelling_facility,
-    };
-    const response = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`
-,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
-    );
-    const data2 = await response.json();
-    console.log(data2);
-  };
+  
   return (
     <>
       <Modal
@@ -442,127 +407,7 @@ const PricingCategories = () => {
             </div>
           </div>
 
-          {/* <div style={{ marginTop: "100px" }}>
-            <div style={{ border: "1px solid", borderRadius: "5px" }}>
-              <div
-                style={{
-                  fontWeight: "bold",
-                  padding: "10px 10px 15px 10px",
-                  borderBottom: "1px solid black",
-                }}
-              >
-                Pick Up & Drop Services
-              </div>
-              <div style={{ padding: "10px" }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={showPickupDrop}
-                      onChange={togglePickupDrop}
-                      name="showPickupDrop"
-                    />
-                  }
-                  label="Show Pick Up & Drop Services"
-                />
-              </div>
-              {showPickupDrop && (
-                <>
-                  <div
-                    style={{
-                      padding: "20px",
-                      borderBottom: "1px solid ",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginTop: "10px",
-                    }}
-                  >
-                    <div>Pick Up & Drop</div>
-                    <TextField
-                      id="outlined-basic"
-                      label="Price"
-                      variant="outlined"
-                      size="small"
-                      value={travelling_facility?.pick_up_and_drop?.price || ""}
-                      onChange={(e) => {
-                        setTravelling_facility({
-                          ...travelling_facility,
-                          pick_up_and_drop: {
-                            price: parseFloat(e.target.value),
-                          },
-                        });
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      padding: "20px",
-                      borderBottom: "1px solid black",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginTop: "10px",
-                    }}
-                  >
-                    <div>Pick Up Only</div>
-                    <TextField
-                      id="outlined-basic"
-                      label="Price"
-                      variant="outlined"
-                      size="small"
-                      value={travelling_facility?.pick_up_only?.price || ""}
-                      onChange={(e) => {
-                        setTravelling_facility({
-                          ...travelling_facility,
-                          pick_up_only: {
-                            price: parseFloat(e.target.value),
-                          },
-                        });
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      padding: "20px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginTop: "10px",
-                    }}
-                  >
-                    <div>Drop Only</div>
-                    <TextField
-                      id="outlined-basic"
-                      label="Price"
-                      variant="outlined"
-                      size="small"
-                      value={travelling_facility?.drop_only?.price || ""}
-                      onChange={(e) => {
-                        setTravelling_facility({
-                          ...travelling_facility,
-                          drop_only: {
-                            price: parseFloat(e.target.value),
-                          },
-                        });
-                      }}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                marginTop: "20px",
-              }}
-            >
-              <Button variant="contained" onClick={handleTravelSubmit}>
-                Submit
-              </Button>
-            </div>
-          </div> */}
+       
         </div>
 
         <div></div>

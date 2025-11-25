@@ -2,12 +2,10 @@ import React, { useEffect, useState } from "react";
 import "../../../assets/css/app.min.css";
 import "../../../assets/css/bootstrap.min.css";
 import {
-  Box,
   TextField,
   Autocomplete,
   FormControlLabel,
   Switch,
-  Button,
 } from "@mui/material";
 import { Toaster, toast } from "react-hot-toast";
 import DayItinerary from "./DayItinerary";
@@ -130,14 +128,14 @@ const AddHolidayPackage = () => {
   );
   const [images, setImages] = useState([]);
   const [themeImage, setThemeImage] = useState(null);
-  const [destinationOptions, setDestinationOptions] = useState([]);
   const [itineraryDays, setItineraryDays] = useState([]);
-  const [newDayItinerary, setNewDayItinerary] = useState(initialDayItinerary);
   const [newActivity, setNewActivity] = useState(initialActivity);
 
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
+  const [destinationCities, setDestinationCities] = useState([]);
   const [selectedStateId, setSelectedStateId] = useState(null);
+  const [selectedDestinationStateId, setSelectedDestinationStateId] = useState(null);
 
   const [availableVehicle, setAvailableVehicle] = useState({
     vehicleType: "",
@@ -158,6 +156,22 @@ const AddHolidayPackage = () => {
       setStates(res.data.data || []);
     });
   }, []);
+
+  // Fetch destination cities based on selected state ID
+  useEffect(() => {
+    if (selectedDestinationStateId) {
+      axios
+        .get(`${process.env.REACT_APP_API_BASE_URL}/city/get-city?stateId=${selectedDestinationStateId}`)
+        .then((res) => {
+          setDestinationCities(res.data.data || []);
+        })
+        .catch(() => {
+          setDestinationCities([]);
+        });
+    } else {
+      setDestinationCities([]);
+    }
+  }, [selectedDestinationStateId]);
 
   // Fetch cities based on state
   useEffect(() => {
@@ -239,7 +253,6 @@ const AddHolidayPackage = () => {
     const updatedDays = [...itineraryDays];
     updatedDays[dayIndex].placesToVisit.push(place);
     setItineraryDays(updatedDays);
-    setNewDayItinerary((prev) => ({ ...prev, placesToVisit: [] }));
   };
 
   const handleRemovePlaceToVisit = (dayIndex, placeIndex) => {
@@ -255,7 +268,6 @@ const AddHolidayPackage = () => {
     const updatedDays = [...itineraryDays];
     updatedDays[dayIndex].mealsIncluded.push(meal);
     setItineraryDays(updatedDays);
-    setNewDayItinerary((prev) => ({ ...prev, mealsIncluded: [] }));
   };
 
   const handleRemoveMeal = (dayIndex, mealIndex) => {
@@ -419,21 +431,28 @@ const AddHolidayPackage = () => {
       formData.append("inflatedPercentage", inflatedPercentage);
       formData.append("active", active);
       formData.append("startCity", startCity);
+      formData.append("availableVehicle", JSON.stringify(packageData.availableVehicle));
 
       // ⬇ Append itinerary
       formData.append("itinerary", JSON.stringify(itineraryDays));
 
       // ⬇ Append files
       formData.append("themeImage", themeImage);
-      images.forEach((img) => formData.append("images", img)); // or 'images[]' based on backend
+      images.forEach((img) => formData.append("files", img));
 
+      const user = JSON.parse(localStorage.getItem("user"));
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/holidays/createPackage`,
         {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+          },
           body: formData,
         }
       );
+
+      const data = await response.json();
 
       if (response.ok) {
         setPackageData(initialPackageData);
@@ -443,11 +462,13 @@ const AddHolidayPackage = () => {
         setThemeImage(null);
         toast.success("Holiday Package Created Successfully!");
       } else {
-        throw new Error("Failed to create package");
+        const errorMsg = typeof data.message === 'object'
+          ? JSON.stringify(data.message)
+          : (data.message || data.error || "Failed to create package");
+        throw new Error(errorMsg);
       }
     } catch (err) {
-      console.error("Error submitting package:", err);
-      toast.error("Failed to create package");
+      toast.error(err.message || "Failed to create package");
     } finally {
       setIsSubmitting(false);
     }
@@ -545,24 +566,55 @@ const AddHolidayPackage = () => {
                 />
               </div>
 
-              <div className="col-sm-12">
-                <label className="form-label">Destination Cities</label>
+              <div className="col-sm-6">
+                <label className="form-label">Destination State</label>
                 <Autocomplete
-                  multiple
-                  options={destinationOptions}
-                  value={packageData.destinationCity.map((city) => ({
-                    label: city,
-                    value: city,
-                  }))}
-                  getOptionLabel={(option) => option.label}
+                  options={states}
+                  value={
+                    states.find((s) => s._id === selectedDestinationStateId) || null
+                  }
+                  getOptionLabel={(option) => option.name || ""}
+                  isOptionEqualToValue={(opt, val) => opt._id === val._id}
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      placeholder="Select Destination Cities"
+                      placeholder="Select Destination State"
+                    />
+                  )}
+                  onChange={(e, selectedOption) => {
+                    setSelectedDestinationStateId(selectedOption?._id || null);
+                    // Clear destination cities when state changes
+                    handlePackageChange("destinationCity", []);
+                  }}
+                />
+              </div>
+
+              <div className="col-sm-6">
+                <label className="form-label">Destination Cities</label>
+                <Autocomplete
+                  multiple
+                  disabled={!selectedDestinationStateId}
+                  options={destinationCities}
+                  value={packageData.destinationCity}
+                  getOptionLabel={(option) => option.name || option}
+                  isOptionEqualToValue={(opt, val) => {
+                    if (typeof val === 'string') return opt.name === val;
+                    return opt._id === val._id;
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder={
+                        selectedDestinationStateId
+                          ? "Select Destination Cities"
+                          : "First select a state"
+                      }
                     />
                   )}
                   onChange={(e, newValue) => {
-                    const destinations = newValue.map((item) => item.value);
+                    const destinations = newValue.map((item) =>
+                      typeof item === 'string' ? item : item.name
+                    );
                     handlePackageChange("destinationCity", destinations);
                   }}
                 />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import CSC, { Country, State, City, IState } from "country-state-city";
+import { useNavigate } from "react-router-dom";
+import { Country, State, City } from "country-state-city";
 import {
   Button,
   TextField,
@@ -11,7 +11,6 @@ import {
 } from "@mui/material";
 
 const LocationDetails = () => {
-  const state = useLocation();
   const navigate = useNavigate();
   const [locationdata, setLocation] = useState({
     location: "",
@@ -19,14 +18,11 @@ const LocationDetails = () => {
     state: "",
     country: "",
   });
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
 
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [selectedState, setSelectedState] = useState(null);
-  const [selectedCity, setSelectedCity] = useState(null);
   const localId = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localId);
+  const [experienceId] = useState(localId);
   useEffect(() => {
     if (experienceId) {
       (async function () {
@@ -47,21 +43,14 @@ const LocationDetails = () => {
         setLocation(responseJson.location);
         setSelectedCountry(responseJson.location.country);
         setSelectedState(responseJson.location.state);
-        setSelectedCity(responseJson.location.city);
       })();
-      return;
-    }
-    if (!experienceId) {
+    } else if (!experienceId) {
       alert("Please fill in all the fields");
-      return;
     }
-  }, []);
+  }, [experienceId]);
 
   const handleCountryChange = (event) => {
     const selectedCountry = event.target.value;
-    // const country = Country.getCountryByShort(selectedCountry);
-    const states = State.getStatesOfCountry(selectedCountry.isoCode);
-    setStates(states);
     setLocation((prevState) => ({
       ...prevState,
       country: selectedCountry,
@@ -70,14 +59,8 @@ const LocationDetails = () => {
     }));
   };
 
-  const handleStateChange = (event) => {
-    const selectedStates = event.target.value;
-    const countryIsoCode = Country.getCountryByCode(selectedCountry);
-    const stateCode = State.getStateByCode(selectedState);
-    const state = State.getStateByCodeAndCountry(
-      event.target.value,
-      countryIsoCode
-    );
+  const handleStateChange = () => {
+    // Optional: handle state change logic here if needed
   };
   const submit = async () => {
     const query = new URLSearchParams({
@@ -188,13 +171,7 @@ const LocationDetails = () => {
               value={locationdata.state}
               onChange={(e) => {
                 setSelectedState(e?.target?.value);
-                const countryIsoCode =
-                  Country.getCountryByCode(selectedCountry);
-                const selectedStateCode = State.getStateByCodeAndCountry(
-                  selectedState,
-                  countryIsoCode?.isoCode
-                );
-                handleStateChange(e);
+                handleStateChange();
                 setLocation((prev) => ({
                   ...prev,
                   state: e.target.value,
@@ -216,7 +193,6 @@ const LocationDetails = () => {
               id="city-select"
               value={locationdata.city ? locationdata.city : ""}
               onChange={(e) => {
-                setSelectedCity(e?.target?.value);
                 setLocation((prev) => ({
                   ...prev,
                   city: e.target.value,

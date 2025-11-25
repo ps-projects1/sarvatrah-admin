@@ -4,16 +4,14 @@ import {
   FormControlLabel,
   Radio,
   RadioGroup,
-  TextField,
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Capacity = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const localId = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localId ? localId : "");
+  const [experienceId] = useState(localId || "")
   const [capacity, setCapacity] = useState("");
   const goBack = () => {
     navigate("/bookingCutoff");
@@ -41,9 +39,8 @@ const Capacity = () => {
     if (!experienceId && experienceId.length === 0) {
       alert("please add titel and categories");
       navigate("/titel");
-      return;
     }
-  }, []);
+  }, [experienceId, navigate]);
 
   const submit = async () => {
     if (capacity.length === 0) {
@@ -53,17 +50,7 @@ const Capacity = () => {
     const data = {
       capacity,
     };
-    const response = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`
-,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
-    );
+    
     navigate("/startTime", {
       state: {
         ...data,

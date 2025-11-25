@@ -1,15 +1,12 @@
 import { Button, TextField } from "@mui/material";
 import React, { useState, useEffect } from "react";
-import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { useLocation, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 const Videos = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { _id } = location.state ? location.state : {};
   const [videoLinks, setVideoLinks] = useState([""]);
   const localId = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localId ? localId : "");
+  const [experienceId] = useState(localId || "");
 
   useEffect(() => {
     if (experienceId && experienceId.length > 0) {
@@ -37,6 +34,7 @@ const Videos = () => {
       navigate("/titel");
       return;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const submit = async () => {
     if (videoLinks.length === 0) {

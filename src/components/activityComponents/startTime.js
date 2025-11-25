@@ -16,15 +16,10 @@ import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import React, { useState, useEffect, useRef } from "react";
-// import { DataGrid, GridRowsProp, GridColDef } from '@mui/x-data-grid';
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 function createData(id, time, duration, linkedRates, buttons) {
   return { id, time, duration, linkedRates, buttons };
 }
-
-const rows = [
-  createData("2825752", "12:00 PM", "1 hour", "Standard rate", "Edit/Delete"),
-];
 
 const style = {
   marginTop: "10px",
@@ -45,9 +40,7 @@ const style = {
 const StartTime = () => {
   const navigate = useNavigate();
   const localID = localStorage.getItem("_id");
-  const [experienceId, setExperienceId] = useState(localID ? localID : null);
-  const location = useLocation();
-  const { _id } = location.state ? location.state : {};
+  const [experienceId] = useState(localID ? localID : null);
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -93,8 +86,8 @@ const StartTime = () => {
       return;
     }
 
-    //navigate("/");
-  }, []);
+
+  }, [experienceId]);
   const createStartTime = async () => {
     if (editingId !== -1) {
       rows[editingId] = {

@@ -30,28 +30,7 @@ const ManageOffer = () => {
     setVehicles(updatedVehicles);
   };
 
-  const addVehicle = () => {
-    setVehicles([
-      ...vehicles,
-      {
-        vehicleType: null,
-        brandName: "",
-        modelName: "",
-        inventory: "",
-        status: "",
-        seatLimit: "",
-        luggageCapacity: "",
-      },
-    ]);
-  };
-
-  const removeVehicle = (index) => {
-    if (vehicles.length > 1) {
-      const updatedVehicles = [...vehicles];
-      updatedVehicles.splice(index, 1);
-      setVehicles(updatedVehicles);
-    }
-  };
+ 
 
   const handleImageChange = (event) => {
     const files = event.target.files;

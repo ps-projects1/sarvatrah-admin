@@ -1,9 +1,8 @@
 import { Button, TextField } from "@mui/material";
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Duration = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const _id = localStorage.getItem("_id");
   const [duration, setDuration] = useState({
@@ -11,10 +10,9 @@ const Duration = () => {
     hours: "",
     minutes: "",
   });
-  const [experienceId, setExperienceId] = useState(_id);
+  const [experienceId] = useState(_id);
   useEffect(() => {
     if (_id) {
-      setExperienceId(_id);
       (async function () {
         const response = await fetch(
           `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
@@ -42,7 +40,7 @@ const Duration = () => {
       alert("please add titel and categories");
       navigate("/titel");
     }
-  }, []);
+  }, [_id, experienceId, navigate]);
   const submit = async () => {
     if (
       !duration.days ||

@@ -1,10 +1,6 @@
-import React from "react";
+import React , { useState } from "react";
 import "../../assets/css/app.min.css";
 import "../../assets/css/bootstrap.min.css";
-import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
-import { useState } from "react";
 import { FormControlLabel, Switch } from "@mui/material";
 
 const ManageVendor = () => {
@@ -30,28 +26,7 @@ const ManageVendor = () => {
     setVehicles(updatedVehicles);
   };
 
-  const addVehicle = () => {
-    setVehicles([
-      ...vehicles,
-      {
-        vehicleType: null,
-        brandName: "",
-        modelName: "",
-        inventory: "",
-        status: "",
-        seatLimit: "",
-        luggageCapacity: "",
-      },
-    ]);
-  };
-
-  const removeVehicle = (index) => {
-    if (vehicles.length > 1) {
-      const updatedVehicles = [...vehicles];
-      updatedVehicles.splice(index, 1);
-      setVehicles(updatedVehicles);
-    }
-  };
+ 
 
   const handleImageChange = (event) => {
     const files = event.target.files;

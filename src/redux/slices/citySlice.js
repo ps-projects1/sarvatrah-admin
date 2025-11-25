@@ -1,39 +1,42 @@
-// features/hotel/hotelSlice.js
+// features/city/citySlice.js
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { API_URL } from "../../utils/constant";
 
 // Async Thunks
-export const fetchHotels = createAsyncThunk(
-  "hotels/fetchAll",
+export const fetchCities = createAsyncThunk(
+  "cities/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      const response = await axios.get(`${API_URL}/hotel/get-hotels`, {
+      const response = await axios.get(`${API_URL}/city/get-cities`, {
         headers: {
           Authorization: `Bearer ${user?.token}`,
         },
       });
-      return response.data.data.hotels;
+      return response.data.data.cities;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
 
-export const addHotel = createAsyncThunk(
-  "hotels/add",
-  async (hotelData, { rejectWithValue }) => {
+export const addCity = createAsyncThunk(
+  "cities/add",
+  async (cityData, { rejectWithValue }) => {
     try {
-      console.log("Adding hotel data:", hotelData);
       const user = JSON.parse(localStorage.getItem("user"));
 
+      if (!user || !user.token) {
+        return rejectWithValue("No authentication token found. Please login again.");
+      }
+
       const response = await axios.post(
-        `${API_URL}/hotel/add-hotel`,
-        hotelData,
+        `${API_URL}/city/add-city`,
+        cityData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${user.token}`,
           },
         }
@@ -45,18 +48,18 @@ export const addHotel = createAsyncThunk(
   }
 );
 
-export const updateHotel = createAsyncThunk(
-  "hotels/update",
-  async (hotelData, { rejectWithValue }) => {
+export const updateCity = createAsyncThunk(
+  "cities/update",
+  async (cityData, { rejectWithValue }) => {
     try {
-      const user = JSON.parse(localStorage.getItem("user")); // or get from Redux/Context if needed
+      const user = JSON.parse(localStorage.getItem("user"));
 
       const response = await axios.put(
-        `${API_URL}/hotel/update-hotel`,
-        hotelData,
+        `${API_URL}/city/update-city`,
+        cityData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${user.token}`,
           },
         }
@@ -68,17 +71,17 @@ export const updateHotel = createAsyncThunk(
   }
 );
 
-export const deleteHotel = createAsyncThunk(
-  "hotels/delete",
-  async (hotelId, { rejectWithValue }) => {
+export const deleteCity = createAsyncThunk(
+  "cities/delete",
+  async (cityId, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/hotel/delete-hotel`, {
-        data: { _id: hotelId },
+      await axios.delete(`${API_URL}/city/delete-city`, {
+        data: { _id: cityId },
         headers: {
           Authorization: `Bearer ${JSON.parse(localStorage.getItem("user")).token}`,
         }
       });
-      return hotelId;
+      return cityId;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
@@ -91,19 +94,18 @@ const initialState = {
   filters: {
     searchTerm: "",
     state: "",
-    city: "",
   },
   pagination: {
     currentPage: 1,
-    rowsPerPage: 5,
+    rowsPerPage: 10,
     totalPages: 1,
   },
   status: "idle",
   error: null,
 };
 
-const hotelSlice = createSlice({
-  name: "hotels",
+const citySlice = createSlice({
+  name: "cities",
   initialState,
   reducers: {
     setSearchTerm: (state, action) => {
@@ -112,27 +114,21 @@ const hotelSlice = createSlice({
     },
     setStateFilter: (state, action) => {
       state.filters.state = action.payload;
-      state.filters.city = "";
-      state.pagination.currentPage = 1;
-    },
-    setCityFilter: (state, action) => {
-      state.filters.city = action.payload;
       state.pagination.currentPage = 1;
     },
     setPage: (state, action) => {
       state.pagination.currentPage = action.payload;
     },
-    filterHotels: (state) => {
-      const { searchTerm, state: stateFilter, city } = state.filters;
+    filterCities: (state) => {
+      const { searchTerm, state: stateFilter } = state.filters;
 
-      state.filteredData = state.data.filter((hotel) => {
+      state.filteredData = state.data.filter((city) => {
         const matchesSearch =
-          (hotel.hotelName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-          (hotel.city?.toLowerCase() || "").includes(searchTerm.toLowerCase());
-        const matchesState = stateFilter ? hotel.state === stateFilter : true;
-        const matchesCity = city ? hotel.city === city : true;
+          (city.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (city.state?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+        const matchesState = stateFilter ? city.state === stateFilter : true;
 
-        return matchesSearch && matchesState && matchesCity;
+        return matchesSearch && matchesState;
       });
 
       state.pagination.totalPages = Math.ceil(
@@ -142,10 +138,10 @@ const hotelSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchHotels.pending, (state) => {
+      .addCase(fetchCities.pending, (state) => {
         state.status = "loading";
       })
-      .addCase(fetchHotels.fulfilled, (state, action) => {
+      .addCase(fetchCities.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.data = action.payload;
         state.filteredData = action.payload;
@@ -153,25 +149,25 @@ const hotelSlice = createSlice({
           action.payload.length / state.pagination.rowsPerPage
         );
       })
-      .addCase(fetchHotels.rejected, (state, action) => {
+      .addCase(fetchCities.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
       })
-      .addCase(addHotel.fulfilled, (state, action) => {
+      .addCase(addCity.fulfilled, (state, action) => {
         state.data.unshift(action.payload);
       })
-      .addCase(updateHotel.pending, (state) => {
+      .addCase(updateCity.pending, (state) => {
         state.status = "loading";
       })
-      .addCase(updateHotel.fulfilled, (state, action) => {
+      .addCase(updateCity.fulfilled, (state, action) => {
         state.status = "succeeded";
-        const index = state.data.findIndex((h) => h._id === action.payload._id);
+        const index = state.data.findIndex((c) => c._id === action.payload._id);
         if (index !== -1) {
           state.data[index] = action.payload;
         }
       })
-      .addCase(deleteHotel.fulfilled, (state, action) => {
-        state.data = state.data.filter((hotel) => hotel._id !== action.payload);
+      .addCase(deleteCity.fulfilled, (state, action) => {
+        state.data = state.data.filter((city) => city._id !== action.payload);
       });
   },
 });
@@ -179,9 +175,8 @@ const hotelSlice = createSlice({
 export const {
   setSearchTerm,
   setStateFilter,
-  setCityFilter,
   setPage,
-  filterHotels,
-} = hotelSlice.actions;
+  filterCities,
+} = citySlice.actions;
 
-export default hotelSlice.reducer;
+export default citySlice.reducer;

@@ -96,15 +96,20 @@ const DayItinerary = ({
           />
         </div>
         <div className="col-md-6">
-          <label className="form-label">Stay</label>
-          <input
-            type="text"
-            className="form-control"
-            value={day.stay || ""}
-            onChange={(e) =>
-              handleDayItineraryChange(dayIndex, "stay", e.target.value)
-            }
-          />
+          <div className="form-check">
+            <input
+              type="checkbox"
+              className="form-check-input"
+              id={`stay-${dayIndex}`}
+              checked={day.stay || false}
+              onChange={(e) =>
+                handleDayItineraryChange(dayIndex, "stay", e.target.checked)
+              }
+            />
+            <label className="form-check-label" htmlFor={`stay-${dayIndex}`}>
+              Stay Included
+            </label>
+          </div>
         </div>
         <div className="col-md-6">
           <label className="form-label">Notes</label>

@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useState }  from "react";
 import "../../assets/css/app.min.css";
 import "../../assets/css/bootstrap.min.css";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
-import { useState } from "react";
 import { FormControlLabel, Switch } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -34,38 +33,8 @@ const ManageSeasonality = () => {
     setVehicles(updatedVehicles);
   };
 
-  const addVehicle = () => {
-    setVehicles([
-      ...vehicles,
-      {
-        vehicleType: null,
-        brandName: "",
-        modelName: "",
-        inventory: "",
-        status: "",
-        seatLimit: "",
-        luggageCapacity: "",
-      },
-    ]);
-  };
 
-  const removeVehicle = (index) => {
-    if (vehicles.length > 1) {
-      const updatedVehicles = [...vehicles];
-      updatedVehicles.splice(index, 1);
-      setVehicles(updatedVehicles);
-    }
-  };
-
-  const handleImageChange = (event) => {
-    const files = event.target.files;
-    const imagesArray = Array.from(files); // Convert FileList to an array
-
-    setVehicles((prevData) => ({
-      ...prevData,
-      images: imagesArray,
-    }));
-  };
+ 
 
   const formattedDate = `${today.getFullYear()}-${(today.getMonth() + 1)
     .toString()
@@ -76,7 +45,6 @@ const ManageSeasonality = () => {
   const handleSubmit = async () => {
     try {
       const promises = vehicles.map(async (vehicle, index) => {
-        // const formData = new FormData();
 
         const processedVehicleType = vehicle.vehicleType
           ? vehicle.vehicleType.label || vehicle.vehicleType
@@ -236,7 +204,9 @@ const ManageSeasonality = () => {
                       />
                     </div>
                     <div className="col-sm-4">
-                      <label className="form-label">
+                      <label 
+                      
+                      className="form-label">
                         Availability Date From
                       </label>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>

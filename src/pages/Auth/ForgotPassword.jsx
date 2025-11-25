@@ -21,7 +21,6 @@ const ForgotPassword = () => {
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [passwordsMatch, setPasswordsMatch] = useState(true);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -277,7 +276,7 @@ const ForgotPassword = () => {
             <button
               className="btn btn-secondary"
               type="submit"
-              disabled={isLoading || !passwordsMatch}
+              disabled={isLoading || formData.newPassword !== formData.rePassword}
             >
               {isLoading ? "Updating..." : "Update Password"}
             </button>
