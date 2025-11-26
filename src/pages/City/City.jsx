@@ -11,7 +11,9 @@ import {
   Grid,
   Pagination,
 } from "@mui/material";
+
 import ConfirmDialog from "../../components/Common/ConfirmDialog";
+
 import {
   fetchCities,
   addCity,
@@ -21,22 +23,26 @@ import {
   setStateFilter,
   setPage,
   filterCities,
+  fetchStates,
 } from "../../redux/slices/citySlice";
+
 import CityList from "../../components/City/CityList";
 import CityForm from "../../components/City/CityForm";
+
 import { showErrorToast, showSuccessToast } from "../../utils/toast";
 import { useDebounce } from "../../hooks/useDebounce";
-import { State } from "country-state-city";
 
 const City = () => {
   const dispatch = useDispatch();
+
   const {
     data: cities = [],
     filteredData = [],
+    states = [],
     filters = { searchTerm: "", state: "" },
-    pagination = { currentPage: 1, rowsPerPage: 10, totalPages: 1 },
+    pagination = { currentPage: 1, rowsPerPage: 10 },
     status = "idle",
-  } = useSelector((state) => state.city || {});
+  } = useSelector((state) => state.cities || {});  // FIXED HERE
 
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
@@ -47,14 +53,13 @@ const City = () => {
 
   const debouncedSearchTerm = useDebounce(filters.searchTerm, 500);
 
-  // Initial Fetch
+  // Initial Load (states + cities)
   useEffect(() => {
     if (status === "idle" && !hasFetched) {
       dispatch(fetchCities())
+        .then(() => dispatch(fetchStates()))
         .then(() => setHasFetched(true))
-        .catch(() => {
-          showErrorToast("Failed to load cities");
-        });
+        .catch(() => showErrorToast("Failed to load data"));
     }
   }, [status, dispatch, hasFetched]);
 
@@ -65,7 +70,8 @@ const City = () => {
     }
   }, [debouncedSearchTerm, filters.state, dispatch, cities.length]);
 
-  // Pagination
+  // Pagination calc
+  const totalPages = Math.ceil(filteredData.length / pagination.rowsPerPage);
   const paginatedCities = filteredData.slice(
     (pagination.currentPage - 1) * pagination.rowsPerPage,
     pagination.currentPage * pagination.rowsPerPage
@@ -75,12 +81,16 @@ const City = () => {
     dispatch(setPage(value));
   };
 
+  const getStateName = (stateId) => {
+    const state = states.find((s) => s._id === stateId);
+    return state ? state.name : "Unknown State";
+  };
+
   const handleAddCity = async (newCity) => {
     try {
       const result = await dispatch(addCity(newCity));
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
+      if (result.error) throw new Error(result.error.message);
+
       showSuccessToast("City added successfully");
       dispatch(fetchCities());
       setOpenAddModal(false);
@@ -97,9 +107,8 @@ const City = () => {
   const handleUpdateCity = async (updatedCity) => {
     try {
       const result = await dispatch(updateCity(updatedCity));
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
+      if (result.error) throw new Error(result.error.message);
+
       showSuccessToast("City updated successfully");
       dispatch(fetchCities());
       setOpenEditModal(false);
@@ -116,43 +125,34 @@ const City = () => {
   const confirmDelete = async () => {
     try {
       const result = await dispatch(deleteCity(cityToDelete));
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
+      if (result.error) throw new Error(result.error.message);
+
       showSuccessToast("City deleted successfully");
       dispatch(fetchCities());
     } catch (error) {
       showErrorToast("Failed to delete city: " + error.message);
     } finally {
+      setDeleteConfirmOpen(false);
       setCityToDelete(null);
     }
   };
 
-  const stateOptions = State.getStatesOfCountry("IN")?.map((item) => ({
-    code: item?.isoCode,
-    label: item?.name,
+  const stateOptions = states.map((state) => ({
+    id: state._id,
+    label: state.name,
   }));
 
   return (
     <div>
       {/* Header */}
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h4">City Management</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setOpenAddModal(true)}
-        >
+        <Button variant="contained" color="primary" onClick={() => setOpenAddModal(true)}>
           Add City
         </Button>
       </Box>
 
-      {/* Search Filters */}
+      {/* Filters */}
       <Box mb={3} p={2} bgcolor="background.paper" borderRadius={1}>
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
@@ -162,24 +162,16 @@ const City = () => {
               variant="outlined"
               value={filters.searchTerm}
               onChange={(e) => dispatch(setSearchTerm(e.target.value))}
-              placeholder="Search by city name or state"
+              placeholder="Search by city name"
             />
           </Grid>
+
           <Grid item xs={12} md={6}>
             <Autocomplete
               options={stateOptions}
-              value={
-                filters.state
-                  ? stateOptions.find((s) => s.label === filters.state) || null
-                  : null
-              }
-              onChange={(e, value) =>
-                dispatch(setStateFilter(value?.label || ""))
-              }
-              getOptionLabel={(option) => option.label}
-              renderInput={(params) => (
-                <TextField {...params} label="Filter by State" />
-              )}
+              value={filters.state ? stateOptions.find((s) => s.label === filters.state) : null}
+              onChange={(e, value) => dispatch(setStateFilter(value?.label || ""))}
+              renderInput={(params) => <TextField {...params} label="Filter by State" />}
             />
           </Grid>
         </Grid>
@@ -193,43 +185,29 @@ const City = () => {
       ) : filteredData.length === 0 ? (
         <Box textAlign="center" my={4}>
           <Typography variant="h6">
-            {cities.length === 0
-              ? "No cities found"
-              : "No cities match your filters"}
+            {cities.length === 0 ? "No cities found" : "No cities match your filters"}
           </Typography>
         </Box>
       ) : (
         <>
-          <CityList
-            cities={paginatedCities}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-          {filteredData.length > pagination.rowsPerPage && (
+          <CityList cities={paginatedCities} onEdit={handleEdit} onDelete={handleDelete} getStateName={getStateName} />
+
+          {totalPages > 1 && (
             <Box display="flex" justifyContent="center" mt={3}>
-              <Pagination
-                count={pagination.totalPages}
-                page={pagination.currentPage}
-                onChange={handlePageChange}
-                color="primary"
-              />
+              <Pagination count={totalPages} page={pagination.currentPage} onChange={handlePageChange} color="primary" />
             </Box>
           )}
         </>
       )}
 
-      {/* Add City Modal */}
+      {/* Add Modal */}
       <Modal open={openAddModal} onClose={() => setOpenAddModal(false)}>
         <Box sx={modalStyle}>
-          <CityForm
-            onSubmit={handleAddCity}
-            mode="add"
-            onCancel={() => setOpenAddModal(false)}
-          />
+          <CityForm onSubmit={handleAddCity} mode="add" onCancel={() => setOpenAddModal(false)} states={states} />
         </Box>
       </Modal>
 
-      {/* Edit City Modal */}
+      {/* Edit Modal */}
       <Modal open={openEditModal} onClose={() => setOpenEditModal(false)}>
         <Box sx={modalStyle}>
           {editingCity && (
@@ -238,12 +216,13 @@ const City = () => {
               mode="edit"
               cityData={editingCity}
               onCancel={() => setOpenEditModal(false)}
+              states={states}
             />
           )}
         </Box>
       </Modal>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Dialog */}
       <ConfirmDialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}

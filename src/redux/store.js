@@ -1,13 +1,15 @@
 import { configureStore } from "@reduxjs/toolkit";
 import hotelReducer from "./slices/hotelSlice";
+import cityReducer from "./slices/citySlice";   // ⬅ ADD THIS
 
 export const store = configureStore({
   reducer: {
     hotel: hotelReducer,
-    // Add other reducers here when needed
+    cities: cityReducer,   // ⬅ FIX: Must match slice name
   },
+
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false, // Disable if you have non-serializable values
+      serializableCheck: false,
     }),
 });

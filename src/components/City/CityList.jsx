@@ -15,7 +15,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-const CityList = ({ cities, onEdit, onDelete }) => {
+const CityList = ({ cities, onEdit, onDelete, getStateName }) => {
   if (!cities || cities.length === 0) {
     return (
       <Box sx={{ textAlign: "center", py: 4 }}>
@@ -34,8 +34,7 @@ const CityList = ({ cities, onEdit, onDelete }) => {
             <TableCell><strong>Sr. No</strong></TableCell>
             <TableCell><strong>City Name</strong></TableCell>
             <TableCell><strong>State</strong></TableCell>
-            <TableCell><strong>Description</strong></TableCell>
-            <TableCell><strong>Status</strong></TableCell>
+{/*             <TableCell><strong>Status</strong></TableCell> */}
             <TableCell align="center"><strong>Actions</strong></TableCell>
           </TableRow>
         </TableHead>
@@ -44,33 +43,14 @@ const CityList = ({ cities, onEdit, onDelete }) => {
             <TableRow key={city._id || index} hover>
               <TableCell>{index + 1}</TableCell>
               <TableCell>{city.name}</TableCell>
-              <TableCell>{city.state}</TableCell>
-              <TableCell>
-                {city.description ? (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      maxWidth: 300,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {city.description}
-                  </Typography>
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    -
-                  </Typography>
-                )}
-              </TableCell>
-              <TableCell>
+              <TableCell>{getStateName(city.state)}</TableCell>
+             {/*  <TableCell>
                 <Chip
                   label={city.active ? "Active" : "Inactive"}
                   color={city.active ? "success" : "default"}
                   size="small"
                 />
-              </TableCell>
+              </TableCell> */}
               <TableCell align="center">
                 <IconButton
                   color="primary"

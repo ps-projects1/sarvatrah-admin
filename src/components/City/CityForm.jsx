@@ -8,32 +8,53 @@ import {
   FormControlLabel,
   Switch,
 } from "@mui/material";
-import { State } from "country-state-city";
 import toast from "react-hot-toast";
 
 const CityForm = ({ cityData, onSubmit, mode = "add", onCancel }) => {
   const [formData, setFormData] = useState({
     name: "",
     state: "",
+    country: "",
     description: "",
     active: true,
   });
 
+  const [stateOptions, setStateOptions] = useState([]);
+
+  // ✅ Fetch states (including countryId)
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/state/get-state`);
+        const json = await res.json();
+
+        setStateOptions(
+          json.data.map((item) => ({
+            id: item._id,
+            label: item.name,
+            countryId: item.country, // ✅ store country dynamically
+          }))
+        );
+      } catch (err) {
+        toast.error("Failed to load states");
+      }
+    };
+
+    fetchStates();
+  }, []);
+
+  // ✅ Populate edit form
   useEffect(() => {
     if (cityData && mode === "edit") {
       setFormData({
         name: cityData.name || "",
-        state: cityData.state || "",
+        state: cityData.state?._id || cityData.state || "",
+        country: cityData.country?._id || cityData.country || "",
         description: cityData.description || "",
         active: cityData.active !== undefined ? cityData.active : true,
       });
     }
   }, [cityData, mode]);
-
-  const stateOptions = State.getStatesOfCountry("IN")?.map((item) => ({
-    code: item?.isoCode,
-    label: item?.name,
-  }));
 
   const handleInputChange = (key, value) => {
     setFormData((prevData) => ({
@@ -45,14 +66,17 @@ const CityForm = ({ cityData, onSubmit, mode = "add", onCancel }) => {
   const handleSubmitForm = async (e) => {
     e.preventDefault();
 
-    // Validate required fields
     if (!formData.name || !formData.state) {
       toast.error("Please fill all required fields");
       return;
     }
 
     const submitData = {
-      ...formData,
+      name: formData.name,
+      stateId: formData.state,
+      countryId: formData.country, // ✅ dynamic country
+      description: formData.description,
+      active: formData.active,
     };
 
     if (mode === "edit" && cityData) {
@@ -80,19 +104,15 @@ const CityForm = ({ cityData, onSubmit, mode = "add", onCancel }) => {
 
         <Autocomplete
           fullWidth
-          required
           options={stateOptions}
-          value={
-            formData.state
-              ? stateOptions.find((s) => s.label === formData.state) || null
-              : null
-          }
-          onChange={(e, selectedOption) =>
-            handleInputChange("state", selectedOption?.label || "")
-          }
+          value={stateOptions.find((s) => s.id === formData.state) || null}
+          onChange={(e, selectedOption) => {
+            handleInputChange("state", selectedOption?.id || "");
+            handleInputChange("country", selectedOption?.countryId || ""); // ✅ auto set country
+          }}
           getOptionLabel={(option) => option.label}
           renderInput={(params) => (
-            <TextField {...params} label="State" placeholder="Select state" />
+            <TextField {...params} label="State" placeholder="Select state" required />
           )}
         />
 

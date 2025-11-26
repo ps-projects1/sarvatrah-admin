@@ -1,182 +1,171 @@
-// features/city/citySlice.js
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { API_URL } from "../../utils/constant";
 
-// Async Thunks
-export const fetchCities = createAsyncThunk(
-  "cities/fetchAll",
+// Fetch States
+export const fetchStates = createAsyncThunk(
+  "cities/fetchStates",
   async (_, { rejectWithValue }) => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      const response = await axios.get(`${API_URL}/city/get-cities`, {
-        headers: {
-          Authorization: `Bearer ${user?.token}`,
-        },
+      const res = await axios.get(`${API_URL}/state/get-state`, {
+        headers: { Authorization: `Bearer ${user?.token}` },
       });
-      return response.data.data.cities;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      return res.data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
+// Fetch Cities
+export const fetchCities = createAsyncThunk(
+  "cities/fetchCities",
+  async (_, { rejectWithValue }) => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const res = await axios.get(`${API_URL}/city/get-city`, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      });
+      return res.data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
     }
   }
 );
 
 export const addCity = createAsyncThunk(
   "cities/add",
-  async (cityData, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-
-      if (!user || !user.token) {
-        return rejectWithValue("No authentication token found. Please login again.");
-      }
-
-      const response = await axios.post(
-        `${API_URL}/city/add-city`,
-        cityData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      const res = await axios.post(`${API_URL}/city/add-city`, data, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
     }
   }
 );
 
 export const updateCity = createAsyncThunk(
   "cities/update",
-  async (cityData, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-
-      const response = await axios.put(
-        `${API_URL}/city/update-city`,
-        cityData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      const res = await axios.put(`${API_URL}/city/update-city`, data, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
     }
   }
 );
 
 export const deleteCity = createAsyncThunk(
   "cities/delete",
-  async (cityId, { rejectWithValue }) => {
+  async (id, { rejectWithValue }) => {
     try {
+      const user = JSON.parse(localStorage.getItem("user"));
       await axios.delete(`${API_URL}/city/delete-city`, {
-        data: { _id: cityId },
-        headers: {
-          Authorization: `Bearer ${JSON.parse(localStorage.getItem("user")).token}`,
-        }
+        data: { _id: id },
+        headers: { Authorization: `Bearer ${user.token}` },
       });
-      return cityId;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      return id;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
     }
   }
 );
 
-const initialState = {
-  data: [],
-  filteredData: [],
-  filters: {
-    searchTerm: "",
-    state: "",
-  },
-  pagination: {
-    currentPage: 1,
-    rowsPerPage: 10,
-    totalPages: 1,
-  },
-  status: "idle",
-  error: null,
-};
-
 const citySlice = createSlice({
-  name: "cities",
-  initialState,
+  name: "cities",   // MUST MATCH STORE
+  initialState: {
+    data: [],
+    filteredData: [],
+    states: [],
+    filters: { searchTerm: "", state: "" },
+    pagination: { currentPage: 1, rowsPerPage: 10 },
+    status: "idle",
+  },
+
   reducers: {
     setSearchTerm: (state, action) => {
       state.filters.searchTerm = action.payload;
-      state.pagination.currentPage = 1;
     },
+
     setStateFilter: (state, action) => {
       state.filters.state = action.payload;
       state.pagination.currentPage = 1;
     },
+
     setPage: (state, action) => {
       state.pagination.currentPage = action.payload;
     },
+
     filterCities: (state) => {
-      const { searchTerm, state: stateFilter } = state.filters;
+      let filtered = state.data;
 
-      state.filteredData = state.data.filter((city) => {
-        const matchesSearch =
-          (city.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-          (city.state?.toLowerCase() || "").includes(searchTerm.toLowerCase());
-        const matchesState = stateFilter ? city.state === stateFilter : true;
+      // Search
+      if (state.filters.searchTerm) {
+        filtered = filtered.filter((city) =>
+          city.name.toLowerCase().includes(state.filters.searchTerm.toLowerCase())
+        );
+      }
 
-        return matchesSearch && matchesState;
-      });
+      // State filter
+      if (state.filters.state) {
+        const stateObj = state.states.find((s) => s.name === state.filters.state);
+        if (stateObj) {
+          filtered = filtered.filter((city) => city.state === stateObj._id);
+        }
+      }
 
-      state.pagination.totalPages = Math.ceil(
-        state.filteredData.length / state.pagination.rowsPerPage
-      );
+      state.filteredData = filtered;
     },
   },
+
   extraReducers: (builder) => {
     builder
+      .addCase(fetchStates.fulfilled, (state, action) => {
+        state.states = action.payload;
+      })
       .addCase(fetchCities.pending, (state) => {
         state.status = "loading";
       })
       .addCase(fetchCities.fulfilled, (state, action) => {
-        state.status = "succeeded";
+        state.status = "idle";
         state.data = action.payload;
         state.filteredData = action.payload;
-        state.pagination.totalPages = Math.ceil(
-          action.payload.length / state.pagination.rowsPerPage
-        );
+        state.pagination.currentPage = 1;
       })
-      .addCase(fetchCities.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload;
+      .addCase(fetchCities.rejected, (state) => {
+        state.status = "idle";
       })
       .addCase(addCity.fulfilled, (state, action) => {
         state.data.unshift(action.payload);
-      })
-      .addCase(updateCity.pending, (state) => {
-        state.status = "loading";
+        state.filteredData.unshift(action.payload);
       })
       .addCase(updateCity.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        const index = state.data.findIndex((c) => c._id === action.payload._id);
-        if (index !== -1) {
-          state.data[index] = action.payload;
+        const idx = state.data.findIndex((c) => c._id === action.payload._id);
+        if (idx !== -1) {
+          state.data[idx] = action.payload;
         }
       })
       .addCase(deleteCity.fulfilled, (state, action) => {
-        state.data = state.data.filter((city) => city._id !== action.payload);
+        state.data = state.data.filter((c) => c._id !== action.payload);
+        state.filteredData = state.filteredData.filter((c) => c._id !== action.payload);
       });
   },
 });
 
-export const {
-  setSearchTerm,
-  setStateFilter,
-  setPage,
-  filterCities,
-} = citySlice.actions;
-
+export const { setSearchTerm, setStateFilter, setPage, filterCities } = citySlice.actions;
 export default citySlice.reducer;

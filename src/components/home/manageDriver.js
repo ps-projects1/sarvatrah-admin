@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import "../../assets/css/app.min.css";
 import "../../assets/css/bootstrap.min.css";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
-import { useState } from "react";
 import { FormControlLabel, Switch } from "@mui/material";
 
 const ManageDriver = () => {
@@ -14,22 +13,25 @@ const ManageDriver = () => {
       brandName: "",
       modelName: "",
       inventory: "",
-      status: "",
+      status: false,
       seatLimit: "",
       luggageCapacity: "",
-      images: null,
+      images: [],
     },
   ]);
 
+  // -------------------------
+  // Update fields
+  // -------------------------
   const handleInputChange = (index, key, value) => {
-    const updatedVehicles = [...vehicles];
-    // Convert 'true'/'false' strings to boolean
-    const processedValue =
-      value === "true" ? true : value === "false" ? false : value;
-    updatedVehicles[index][key] = processedValue;
-    setVehicles(updatedVehicles);
+    const updated = [...vehicles];
+    updated[index][key] = value;
+    setVehicles(updated);
   };
 
+  // -------------------------
+  // Add new vehicle block
+  // -------------------------
   const addVehicle = () => {
     setVehicles([
       ...vehicles,
@@ -38,71 +40,84 @@ const ManageDriver = () => {
         brandName: "",
         modelName: "",
         inventory: "",
-        status: "",
+        status: false,
         seatLimit: "",
         luggageCapacity: "",
+        images: [],
       },
     ]);
   };
 
+  // -------------------------
+  // Remove a vehicle block
+  // -------------------------
   const removeVehicle = (index) => {
     if (vehicles.length > 1) {
-      const updatedVehicles = [...vehicles];
-      updatedVehicles.splice(index, 1);
-      setVehicles(updatedVehicles);
+      const updated = [...vehicles];
+      updated.splice(index, 1);
+      setVehicles(updated);
     }
   };
 
-  const handleImageChange = (event) => {
-    const files = event.target.files;
-    const imagesArray = Array.from(files); // Convert FileList to an array
-
-    setVehicles((prevData) => ({
-      ...prevData,
-      images: imagesArray,
-    }));
+  // -------------------------
+  // Handle Image Upload Per Vehicle
+  // -------------------------
+  const handleImageChange = (index, files) => {
+    const updated = [...vehicles];
+    updated[index].images = Array.from(files); // multiple images
+    setVehicles(updated);
   };
 
+  // -------------------------
+  // SUBMIT ALL VEHICLES
+  // -------------------------
   const handleSubmit = async () => {
     try {
-      const promises = vehicles.map(async (vehicle, index) => {
-        // const formData = new FormData();
+      const promises = vehicles.map(async (vehicle) => {
+        const formData = new FormData();
 
-        const processedVehicleType = vehicle.vehicleType
-          ? vehicle.vehicleType.label || vehicle.vehicleType
-          : null;
+        formData.append(
+          "vehicleType",
+          vehicle.vehicleType ? vehicle.vehicleType.label : ""
+        );
+        formData.append("brandName", vehicle.brandName);
+        formData.append("modelName", vehicle.modelName);
+        formData.append("inventory", vehicle.inventory);
+        formData.append("seatLimit", vehicle.seatLimit);
+        formData.append("luggageCapacity", vehicle.luggageCapacity);
+        formData.append("rate", "0");
+        formData.append("active", vehicle.status);
+        formData.append("city", ""); // add if needed
+        formData.append("vehicleCategory", ""); // add if needed
+        formData.append("facilties", JSON.stringify(vehicle.facilties || []));
 
-        const queryString = Object.entries({
-          ...vehicle,
-          vehicleType: processedVehicleType,
-          status: vehicle.status ? "true" : "false", // Convert boolean to 'true'/'false' string
-        })
-          .map(
-            ([key, value]) =>
-              `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-          )
-          .join("&");
 
-        const url = `${process.env.REACT_APP_API_BASE_URL}/inventries/vehicle?${queryString}`;
-
-        const response = await fetch(url, {
-          method: "POST",
+        // ---- Append all images ----
+        vehicle.images.forEach((img) => {
+          formData.append("images", img);
         });
+
+        const response = await fetch(
+          `${process.env.REACT_APP_API_BASE_URL}/inventries/vehicle`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
 
         return response;
       });
 
-      const responses = await Promise.all(promises);
+      const results = await Promise.all(promises);
 
-      const allResponsesSuccessful = responses.every((response) => response.ok);
-
-      if (allResponsesSuccessful) {
-        console.log("Vehicles added successfully");
+      if (results.every((r) => r.ok)) {
+        alert("Vehicles uploaded successfully");
       } else {
-        console.error("Failed to add some vehicles");
+        alert("Some vehicles failed to upload");
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error(error);
+      alert("Upload failed");
     }
   };
 
@@ -110,222 +125,122 @@ const ManageDriver = () => {
     <div className="col-lg-12">
       <div className="card" style={{ margin: "15px", padding: "15px" }}>
         <div className="card-header align-items-center d-flex">
-          <h1 className="card-title  flex-grow-1 ">Manage Driver</h1>
+          <h1 className="card-title flex-grow-1">Manage Driver</h1>
         </div>
-        <div>
-          {vehicles.map((vehicle, index) => (
-            <div key={index} style={{ marginBottom: "20px" }}>
-              <div className="card-body">
-                <div className="live-preview">
-                  <div className="row g-3">
-                    <div className="col-sm-4">
-                      <label
-                        htmlFor={`vehicleTypeInput-${index}`}
-                        className="form-label"
-                      >
-                        Vehicle Type
-                      </label>
-                      <Autocomplete
-                        id={`vehicleTypeInput-${index}`}
-                        sx={{ width: "100%" }}
-                        size="small"
-                        options={[
-                          { label: "Sedan" },
-                          { label: "Hatchback" },
-                          { label: "MUV" },
-                          { label: "SUV 6 Seater" },
-                          { label: "SUV 7 Seater" },
-                          { label: "Tempo Traveller 12 Seater" },
-                          { label: "Tempo Traveller 16 Seater" },
-                        ]}
-                        autoHighlight
-                        value={vehicle.vehicleType}
-                        onChange={(e, newValue) =>
-                          handleInputChange(index, "vehicleType", newValue)
-                        }
-                        required
-                        getOptionLabel={(option) =>
-                          option ? option.label : ""
-                        }
-                        isOptionEqualToValue={(option, value) =>
-                          option && value && option.label === value.label
-                        }
-                        renderOption={(props, option) => (
-                          <Box
-                            component="li"
-                            sx={{ "& > img": { mr: 2, flexShrink: 0 } }}
-                            {...props}
-                          >
-                            {option.label}
-                          </Box>
-                        )}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            placeholder="Vehicle Type"
-                            inputProps={{
-                              ...params.inputProps,
-                              autoComplete: "new-password",
-                            }}
-                          />
-                        )}
-                      />
-                    </div>
-                    <div className="col-sm-4">
-                      <label
-                        htmlFor={`modelNameInput-${index}`}
-                        className="form-label"
-                      >
-                        Model Name
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Model Name"
-                        aria-label="model-name"
-                        value={vehicle.modelName}
-                        onChange={(e) =>
-                          handleInputChange(index, "modelName", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="col-sm-4">
-                      <label
-                        htmlFor={`brandNameInput-${index}`}
-                        className="form-label"
-                      >
-                        Driver Name
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Driver Name"
-                        aria-label="brand-name"
-                        value={vehicle.brandName}
-                        onChange={(e) =>
-                          handleInputChange(index, "brandName", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="col-sm-4">
-                      <label for="firstNameinput" className="form-label">
-                        Images
-                      </label>
-                      <input
-                        type="file"
-                        className="form-control"
-                        id="imagesInput"
-                        // multiple
-                        onChange={handleImageChange}
-                      />
-                    </div>
-                    {/* <div className="col-sm-4">
-                                            <label htmlFor={`inventoryInput-${index}`} className="form-label">Inventory</label>
-                                            <input
-                                                type="number"
-                                                className="form-control"
-                                                placeholder="Inventory"
-                                                aria-label="inventory"
-                                                value={vehicle.inventory}
-                                                onChange={(e) => handleInputChange(index, 'inventory', e.target.value)}
-                                            />
-                                        </div> */}
 
-                    {/* <div className="col-sm-4">
-                                            <label htmlFor={`seatLimitInput-${index}`} className="form-label">Passenger Capacity</label>
-                                            <input
-                                                type="number"
-                                                className="form-control"
-                                                placeholder="Passenger Capacity"
-                                                aria-label="passenger-capacity"
-                                                value={vehicle.seatLimit}
-                                                onChange={(e) => handleInputChange(index, 'seatLimit', e.target.value)}
-                                            />
-                                        </div> */}
-                    {/* <div className="col-sm-4">
-                                            <label htmlFor={`luggageCapacityInput-${index}`} className="form-label">Luggage Capacity</label>
-                                            <input
-                                                type="number"
-                                                className="form-control"
-                                                placeholder="Luggage Capacity"
-                                                aria-label="luggage-capacity"
-                                                value={vehicle.luggageCapacity}
-                                                onChange={(e) => handleInputChange(index, 'luggageCapacity', e.target.value)}
-                                            />
-                                        </div> */}
-                    <div className="col-sm-4">
-                      <label
-                        htmlFor={`statusInput-${index}`}
-                        className="form-label"
-                      >
-                        Status
-                      </label>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={vehicle.status}
-                            onChange={(e) =>
-                              handleInputChange(
-                                index,
-                                "status",
-                                e.target.checked
-                              )
-                            }
-                          />
-                        }
-                        // value={vehicle.status}
+        {/* VEHICLE FORMS */}
+        {vehicles.map((vehicle, index) => (
+          <div key={index} style={{ marginBottom: "20px" }}>
+            <div className="card-body">
+              <div className="row g-3">
+                {/* Vehicle Type */}
+                <div className="col-sm-4">
+                  <label className="form-label">Vehicle Type</label>
+                  <Autocomplete
+                    id={`vehicleTypeInput-${index}`}
+                    sx={{ width: "100%" }}
+                    size="small"
+                    options={[
+                      { label: "Sedan" },
+                      { label: "Hatchback" },
+                      { label: "MUV" },
+                      { label: "SUV 6 Seater" },
+                      { label: "SUV 7 Seater" },
+                      { label: "Tempo Traveller 12 Seater" },
+                      { label: "Tempo Traveller 16 Seater" },
+                    ]}
+                    value={vehicle.vehicleType}
+                    onChange={(e, newValue) =>
+                      handleInputChange(index, "vehicleType", newValue)
+                    }
+                    getOptionLabel={(option) =>
+                      option ? option.label : ""
+                    }
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder="Vehicle Type" />
+                    )}
+                  />
+                </div>
+
+                {/* Model Name */}
+                <div className="col-sm-4">
+                  <label className="form-label">Model Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={vehicle.modelName}
+                    onChange={(e) =>
+                      handleInputChange(index, "modelName", e.target.value)
+                    }
+                  />
+                </div>
+
+                {/* Driver Name */}
+                <div className="col-sm-4">
+                  <label className="form-label">Driver Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={vehicle.brandName}
+                    onChange={(e) =>
+                      handleInputChange(index, "brandName", e.target.value)
+                    }
+                  />
+                </div>
+
+                {/* Image Upload */}
+                <div className="col-sm-4">
+                  <label className="form-label">Images</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    multiple
+                    onChange={(e) =>
+                      handleImageChange(index, e.target.files)
+                    }
+                  />
+                </div>
+
+                {/* Status */}
+                <div className="col-sm-4">
+                  <label className="form-label">Status</label>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={vehicle.status}
                         onChange={(e) =>
-                          handleInputChange(index, "status", e.target.value)
+                          handleInputChange(index, "status", e.target.checked)
                         }
-                        size="large"
                       />
-                    </div>
-                  </div>
+                    }
+                  />
                 </div>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "end",
-                  justifyContent: "center",
-                }}
-              >
-                {vehicles.length > 1 && (
-                  <button
-                    onClick={() => removeVehicle(index)}
-                    className="form-label btn btn-danger btn-border"
-                    style={{ marginBottom: "0px" }}
-                  >
-                    Remove Driver
-                  </button>
-                )}
-              </div>
             </div>
-          ))}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "end",
-              justifyContent: "center",
-            }}
-          >
-            <button
-              onClick={addVehicle}
-              className="form-label btn btn-primary btn-border"
-              style={{ marginBottom: "0px" }}
-            >
-              Add Driver
-            </button>
+
+            {/* Remove Button */}
+            <div className="text-center mt-2">
+              {vehicles.length > 1 && (
+                <button
+                  onClick={() => removeVehicle(index)}
+                  className="btn btn-danger btn-border"
+                >
+                  Remove Driver
+                </button>
+              )}
+            </div>
           </div>
+        ))}
+
+        {/* Add More Vehicles */}
+        <div className="text-center my-3">
+          <button onClick={addVehicle} className="btn btn-primary btn-border">
+            Add Driver
+          </button>
         </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "end",
-            padding: "15px",
-            borderTop: "1px solid #f1f1f1",
-          }}
-        >
+
+        {/* Submit */}
+        <div className="d-flex justify-content-end border-top p-3">
           <button className="btn btn-primary btn-border" onClick={handleSubmit}>
             Submit
           </button>
@@ -334,4 +249,5 @@ const ManageDriver = () => {
     </div>
   );
 };
+
 export default ManageDriver;

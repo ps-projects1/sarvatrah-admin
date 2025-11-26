@@ -98,7 +98,7 @@ const initialDayItinerary = {
   title: "",
   subtitle: "",
   description: "",
-  stay: "",
+  stay: false,
   mealsIncluded: [],
   transport: {
     type: "",
@@ -121,7 +121,7 @@ const initialActivity = {
   },
 };
 
-const AddHolidayPackage = () => {
+const AddHolidayPackage = ({ editPackageData, onBack }) => {
   const [packageData, setPackageData] = useState(initialPackageData);
   const [packageDuration, setPackageDuration] = useState(
     initialPackageDuration
@@ -157,6 +157,50 @@ const AddHolidayPackage = () => {
     });
   }, []);
 
+  // When editing, populate all fields
+useEffect(() => {
+  if (editPackageData) {
+    // 1️⃣ Set basic package data
+    setPackageData({
+      ...initialPackageData,
+      ...editPackageData, 
+      destinationCity: editPackageData.destinationCity || [],
+      availableVehicle: editPackageData.availableVehicle || [],
+      active: editPackageData.active,
+      status: editPackageData.status,
+      createPilgrimage: editPackageData.createPilgrimage,
+      displayHomepage: editPackageData.displayHomepage,
+      recommendedPackage: editPackageData.recommendedPackage,
+      partialPayment: editPackageData.partialPayment
+    });
+
+    // 2️⃣ Set duration
+    if (editPackageData.packageDuration) {
+      setPackageDuration({
+        days: editPackageData.packageDuration.days,
+        nights: editPackageData.packageDuration.nights,
+      });
+    }
+
+    // 3️⃣ Set itinerary
+    if (Array.isArray(editPackageData.itinerary)) {
+      setItineraryDays(editPackageData.itinerary);
+    }
+
+    // 4️⃣ Pre-fill destination state
+    if (editPackageData.destinationStateId) {
+      setSelectedDestinationStateId(editPackageData.destinationStateId);
+    }
+
+    // 5️⃣ Pre-fill image preview (themeImage stored URL)
+    if (editPackageData.themeImg?.path) {
+      setThemeImage(editPackageData.themeImg); 
+    }
+  }
+}, [editPackageData]);
+
+
+
   // Fetch destination cities based on selected state ID
   useEffect(() => {
     if (selectedDestinationStateId) {
@@ -187,20 +231,44 @@ const AddHolidayPackage = () => {
   }, [selectedStateId]);
 
   // Initialize days
-  useEffect(() => {
+useEffect(() => {
+  if (!editPackageData) {
+    // CREATE MODE → always regenerate days
     if (packageDuration.days > 0) {
-      const daysArray = Array.from(
+      const newArr = Array.from(
         { length: packageDuration.days },
         (_, i) => ({
           ...initialDayItinerary,
           dayNo: i + 1,
         })
       );
-      setItineraryDays(daysArray);
-    } else {
-      setItineraryDays([]);
+      setItineraryDays(newArr);
     }
-  }, [packageDuration.days]);
+    return;
+  }
+
+  // EDIT MODE → do not wipe existing itinerary
+  if (!editPackageData.itinerary) return;
+
+  let existing = [...editPackageData.itinerary];
+  const newDays = packageDuration.days;
+
+  // If days increased → add new blank days
+  while (existing.length < newDays) {
+    existing.push({
+      ...initialDayItinerary,
+      dayNo: existing.length + 1,
+    });
+  }
+
+  // If days decreased → remove extra days
+  if (existing.length > newDays) {
+    existing = existing.slice(0, newDays);
+  }
+
+  setItineraryDays(existing);
+}, [packageDuration.days, editPackageData]);
+
 
   // Update nights
   useEffect(() => {
@@ -323,156 +391,181 @@ const AddHolidayPackage = () => {
   };
 
   // Submit
-  const handleSubmit = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+const handleSubmit = async () => {
+  if (isSubmitting) return;
+  setIsSubmitting(true);
 
-    try {
-      const {
-        objectType,
-        packageName,
-        selectType,
-        uniqueId,
-        packageType,
-        destinationCity,
-        highlights,
-        createPilgrimage,
-        displayHomepage,
-        recommendedPackage,
-        roomLimit,
-        partialPayment,
-        paymentDueDays,
-        partialPaymentPercentage,
-        cancellationPolicyType,
-        include,
-        exclude,
-        priceMarkup,
-        inflatedPercentage,
-        active,
-        startCity,
-      } = packageData;
+  try {
+    const {
+      objectType,
+      packageName,
+      selectType,
+      uniqueId,
+      packageType,
+      destinationCity,
+      highlights,
+      createPilgrimage,
+      displayHomepage,
+      recommendedPackage,
+      roomLimit,
+      partialPayment,
+      paymentDueDays,
+      partialPaymentPercentage,
+      cancellationPolicyType,
+      include,
+      exclude,
+      priceMarkup,
+      inflatedPercentage,
+      active,
+      startCity,
+    } = packageData;
 
-      const { days, nights } = packageDuration;
+    const { days, nights } = packageDuration;
 
-      const refundablePercentage = packageData.refundablePercentage || 0;
-      const refundableDays = packageData.refundableDays || 0;
+    const refundablePercentage = packageData.refundablePercentage || 0;
+    const refundableDays = packageData.refundableDays || 0;
 
-      // === Validations ===
-      if (!objectType) return toast.error("objectType is required");
-      if (!packageName.trim()) return toast.error("Package Name is required");
-      if (!days || days < 1 || days > 10)
-        return toast.error("Days must be between 1–10");
-      if (!selectType) return toast.error("Select Type is required");
-      if (!uniqueId.trim()) return toast.error("Unique ID is required");
-      if (!packageType) return toast.error("Package Type is required");
-      if (!destinationCity.length)
-        return toast.error("At least 1 destination is required");
-      if (!highlights.trim()) return toast.error("Highlights are required");
-      if (!startCity.trim()) return toast.error("Start City is required");
-      if (!roomLimit || roomLimit < 1)
-        return toast.error("Room Limit must be at least 1");
-      if (
-        partialPayment &&
-        (partialPaymentPercentage <= 0 || partialPaymentPercentage > 100)
-      )
-        return toast.error("Partial Payment % must be 1–100");
-      if (partialPayment && paymentDueDays < 0)
-        return toast.error("Payment Due Days must be 0 or more");
-      if (!cancellationPolicyType)
-        return toast.error("Cancellation Policy is required");
-      if (refundablePercentage < 0 || refundablePercentage > 100)
-        return toast.error("Refundable Percentage must be 0–100");
-      if (refundableDays < 0)
-        return toast.error("Refundable Days must be 0 or more");
-      if (!include.trim()) return toast.error("Includes are required");
-      if (!exclude.trim()) return toast.error("Excludes are required");
-      if (priceMarkup < 0 || priceMarkup > 100)
-        return toast.error("Price Markup must be 0–100%");
-      if (inflatedPercentage < 0 || inflatedPercentage > 100)
-        return toast.error("Inflated % must be 0–100%");
-      if (!themeImage) return toast.error("Theme image is required");
-      if (images.length === 0)
-        return toast.error("At least one additional image is required");
-      if (itineraryDays.length !== days)
-        return toast.error("Itinerary days mismatch with number of days");
+    // ---------------- VALIDATIONS ----------------
+    if (!objectType) return toast.error("objectType is required");
+    if (!packageName.trim()) return toast.error("Package Name is required");
+    if (!days || days < 1 || days > 10)
+      return toast.error("Days must be between 1–10");
+    if (!selectType) return toast.error("Select Type is required");
+    if (!uniqueId.trim()) return toast.error("Unique ID is required");
+    if (!packageType) return toast.error("Package Type is required");
+    if (!destinationCity.length)
+      return toast.error("At least 1 destination is required");
+    if (!highlights.trim()) return toast.error("Highlights are required");
+    if (!startCity.trim()) return toast.error("Start City is required");
 
-      for (let i = 0; i < itineraryDays.length; i++) {
-        const d = itineraryDays[i];
-        if (!d.title || !d.description)
-          return toast.error(`Day ${i + 1} must have title and description`);
-      }
+    // 🔥 Creation requires theme + images  
+    // 🔥 Editing does NOT require uploading new images
+    if (!editPackageData && !themeImage)
+      return toast.error("Theme image is required");
+    if (!editPackageData && images.length === 0)
+      return toast.error("At least one additional image is required");
 
-      // === ✅ Construct FormData ===
-      const formData = new FormData();
+    if (!roomLimit || roomLimit < 1)
+      return toast.error("Room Limit must be at least 1");
+    if (
+      partialPayment &&
+      (partialPaymentPercentage <= 0 || partialPaymentPercentage > 100)
+    )
+      return toast.error("Partial Payment % must be 1–100");
+    if (partialPayment && paymentDueDays < 0)
+      return toast.error("Payment Due Days must be 0 or more");
+    if (!cancellationPolicyType)
+      return toast.error("Cancellation Policy is required");
+    if (refundablePercentage < 0 || refundablePercentage > 100)
+      return toast.error("Refundable Percentage must be 0–100");
+    if (refundableDays < 0)
+      return toast.error("Refundable Days must be 0 or more");
+    if (!include.trim()) return toast.error("Includes are required");
+    if (!exclude.trim()) return toast.error("Excludes are required");
+    if (priceMarkup < 0 || priceMarkup > 100)
+      return toast.error("Price Markup must be 0–100%");
+    if (inflatedPercentage < 0 || inflatedPercentage > 100)
+      return toast.error("Inflated % must be 0–100%");
 
-      // 🔁 Add all fields flat (NOT nested under packageData)
-      formData.append("objectType", objectType);
-      formData.append("packageName", packageName);
-      formData.append("days", days);
-      formData.append("nights", nights);
-      formData.append("selectType", selectType);
-      formData.append("uniqueId", uniqueId);
-      formData.append("packageType", packageType);
-      formData.append("destinationCity", JSON.stringify(destinationCity));
-      formData.append("highlights", highlights);
-      formData.append("createPilgrimage", createPilgrimage);
-      formData.append("displayHomepage", displayHomepage);
-      formData.append("recommendedPackage", recommendedPackage);
-      formData.append("roomLimit", roomLimit);
-      formData.append("partialPayment", partialPayment);
-      formData.append("partialPaymentDueDays", paymentDueDays);
-      formData.append("partialPaymentPercentage", partialPaymentPercentage);
-      formData.append("cancellationPolicyType", cancellationPolicyType);
-      formData.append("refundablePercentage", refundablePercentage);
-      formData.append("refundableDays", refundableDays);
-      formData.append("include", include);
-      formData.append("exclude", exclude);
-      formData.append("priceMarkup", priceMarkup);
-      formData.append("inflatedPercentage", inflatedPercentage);
-      formData.append("active", active);
-      formData.append("startCity", startCity);
-      formData.append("availableVehicle", JSON.stringify(packageData.availableVehicle));
+    if (itineraryDays.length !== days)
+      return toast.error("Itinerary days mismatch");
 
-      // ⬇ Append itinerary
-      formData.append("itinerary", JSON.stringify(itineraryDays));
-
-      // ⬇ Append files
-      formData.append("themeImage", themeImage);
-      images.forEach((img) => formData.append("files", img));
-
-      const user = JSON.parse(localStorage.getItem("user"));
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/holidays/createPackage`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${user?.token}`,
-          },
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setPackageData(initialPackageData);
-        setPackageDuration(initialPackageDuration);
-        setItineraryDays([]);
-        setImages([]);
-        setThemeImage(null);
-        toast.success("Holiday Package Created Successfully!");
-      } else {
-        const errorMsg = typeof data.message === 'object'
-          ? JSON.stringify(data.message)
-          : (data.message || data.error || "Failed to create package");
-        throw new Error(errorMsg);
-      }
-    } catch (err) {
-      toast.error(err.message || "Failed to create package");
-    } finally {
-      setIsSubmitting(false);
+    for (let i = 0; i < itineraryDays.length; i++) {
+      const d = itineraryDays[i];
+      if (!d.title || !d.description)
+        return toast.error(`Day ${i + 1} must have title & description`);
     }
-  };
+
+    // ---------------- FORM DATA ----------------
+    const formData = new FormData();
+
+    formData.append("objectType", objectType);
+    formData.append("packageName", packageName);
+    formData.append("days", days);
+    formData.append("nights", nights);
+    formData.append("selectType", selectType);
+    formData.append("uniqueId", uniqueId);
+    formData.append("packageType", packageType);
+    formData.append("destinationCity", JSON.stringify(destinationCity));
+    formData.append("highlights", highlights);
+    formData.append("createPilgrimage", createPilgrimage);
+    formData.append("displayHomepage", displayHomepage);
+    formData.append("recommendedPackage", recommendedPackage);
+    formData.append("roomLimit", roomLimit);
+    formData.append("partialPayment", partialPayment);
+    formData.append("partialPaymentDueDays", paymentDueDays);
+    formData.append("partialPaymentPercentage", partialPaymentPercentage);
+    formData.append("cancellationPolicyType", cancellationPolicyType);
+    formData.append("refundablePercentage", refundablePercentage);
+    formData.append("refundableDays", refundableDays);
+    formData.append("include", include);
+    formData.append("exclude", exclude);
+    formData.append("priceMarkup", priceMarkup);
+    formData.append("inflatedPercentage", inflatedPercentage);
+    formData.append("active", active);
+    formData.append("startCity", startCity);
+    formData.append(
+      "availableVehicle",
+      JSON.stringify(packageData.availableVehicle)
+    );
+
+    formData.append("itinerary", JSON.stringify(itineraryDays));
+
+    // 🔥 Only append files if user selected new ones
+    if (themeImage) formData.append("themeImage", themeImage);
+    images.forEach((img) => formData.append("files", img));
+
+    // ---------------- API CALL ----------------
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    let apiUrl = "";
+    let method = "";
+
+    if (editPackageData?._id) {
+      // EDIT
+      formData.append("_id", editPackageData._id);
+      apiUrl = `${process.env.REACT_APP_API_BASE_URL}/holidays/updatePackage`;
+      method = "PUT";
+    } else {
+      // CREATE
+      apiUrl = `${process.env.REACT_APP_API_BASE_URL}/holidays/createPackage`;
+      method = "POST";
+    }
+
+    const response = await fetch(apiUrl, {
+      method,
+      headers: {
+        Authorization: `Bearer ${user?.token}`,
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Request failed");
+    }
+
+    toast.success(
+      editPackageData ? "Package Updated!" : "Package Created Successfully!"
+    );
+
+    // RESET FORM ONLY AFTER CREATE
+    if (!editPackageData) {
+      setPackageData(initialPackageData);
+      setPackageDuration(initialPackageDuration);
+      setItineraryDays([]);
+      setImages([]);
+      setThemeImage(null);
+    }
+
+  } catch (err) {
+    toast.error(err.message || "Failed");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <div className="col-lg-12">

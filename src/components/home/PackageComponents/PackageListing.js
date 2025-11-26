@@ -17,8 +17,8 @@ import AddHolidayPackage from "./addHolidayPackage";
 import { useLocation } from "react-router-dom";
 
 const PackageListing = () => {
-  const [packages, setPackages] = useState([]);
-  const [filtered, setFiltered] = useState([]);
+  const [packages, setPackages] = useState([]); // packages for current page
+  const [filtered, setFiltered] = useState([]); // filtered view of packages (client-side search)
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editPackage, setEditPackage] = useState(null);
@@ -30,12 +30,68 @@ const PackageListing = () => {
     itemsPerPage: 10,
   });
 
+  const location = useLocation();
+
+  // Fetch packages for a given page (default 1)
+  const fetchPackages = async (page = 1) => {
+    try {
+      setLoading(true);
+
+      const limit = pagination.itemsPerPage || 10;
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/holiday/get-holiday-package?page=${page}&limit=${limit}`
+      );
+
+      if (res.data && res.data.status && res.data.data) {
+        const { holidayPackages, pagination: pag } = res.data.data;
+
+        // update packages and pagination from server response
+        setPackages(Array.isArray(holidayPackages) ? holidayPackages : []);
+        setFiltered(Array.isArray(holidayPackages) ? holidayPackages : []);
+
+        setPagination((prev) => ({
+          ...prev,
+          currentPage: pag?.currentPage ?? page,
+          totalPages: pag?.totalPages ?? prev.totalPages,
+          totalItems: pag?.totalItems ?? prev.totalItems,
+          itemsPerPage: pag?.itemsPerPage ?? prev.itemsPerPage,
+        }));
+      } else {
+        // empty or malformed response
+        setPackages([]);
+        setFiltered([]);
+        setPagination((prev) => ({ ...prev, totalPages: 1, totalItems: 0 }));
+      }
+    } catch (e) {
+      console.error("Fetch packages error:", e);
+      // optionally show toast
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // initial load & reload when returning from form
   useEffect(() => {
-    if (!showForm) fetchPackages();
+    if (!showForm) {
+      fetchPackages(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showForm]);
 
+  // Reset form visibility when route changes
   useEffect(() => {
-    const term = searchTerm.toLowerCase();
+    setShowForm(false);
+    setEditPackage(null);
+  }, [location.pathname]);
+
+  // Client-side search on the currently fetched page
+  useEffect(() => {
+    const term = (searchTerm || "").toLowerCase().trim();
+    if (!term) {
+      setFiltered(packages);
+      return;
+    }
+
     setFiltered(
       packages.filter((pkg) => {
         if (!pkg) return false;
@@ -45,8 +101,8 @@ const PackageListing = () => {
           pkg.packageType,
           pkg.selectType,
           pkg.startCity,
-          ...(pkg.destinationCity || []),
-        ].filter(Boolean); // Remove undefined/null values
+          ...(Array.isArray(pkg.destinationCity) ? pkg.destinationCity : []),
+        ].filter(Boolean);
 
         return values.some((val) =>
           val?.toString().toLowerCase().includes(term)
@@ -54,24 +110,6 @@ const PackageListing = () => {
       })
     );
   }, [searchTerm, packages]);
-
-  const fetchPackages = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/holiday/get-holiday-package`
-
-      );
-      if (res.data.status) {
-        setPackages(res.data.data.holidayPackages);
-        setPagination(res.data.data.pagination); // Store pagination info
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAdd = () => {
     setEditPackage(null);
@@ -83,13 +121,17 @@ const PackageListing = () => {
     setShowForm(true);
   };
 
-  const location = useLocation();
+  const handlePrev = () => {
+    if (pagination.currentPage > 1) {
+      fetchPackages(pagination.currentPage - 1);
+    }
+  };
 
-  useEffect(() => {
-    // Reset form visibility when route changes
-    setShowForm(false);
-    setEditPackage(null);
-  }, [location.pathname]);
+  const handleNext = () => {
+    if (pagination.currentPage < pagination.totalPages) {
+      fetchPackages(pagination.currentPage + 1);
+    }
+  };
 
   return (
     <Box>
@@ -100,20 +142,16 @@ const PackageListing = () => {
         alignItems="center"
       >
         <Typography variant="h5">
-          {showForm
-            ? editPackage
-              ? "Edit Package"
-              : "Add New Package"
-            : "Holiday Packages"}
+          {showForm ? (editPackage ? "Edit Package" : "Add New Package") : "Holiday Packages"}
         </Typography>
         <Button
           variant="contained"
           onClick={() => {
             if (showForm) {
-              setShowForm(false); // go back to listing
-              setEditPackage(null); // clear edit data
+              setShowForm(false);
+              setEditPackage(null);
             } else {
-              handleAdd(); // go to add form
+              handleAdd();
             }
           }}
         >
@@ -124,7 +162,11 @@ const PackageListing = () => {
       {showForm ? (
         <AddHolidayPackage
           editPackageData={editPackage}
-          onBack={() => setShowForm(false)}
+          onBack={() => {
+            setShowForm(false);
+            // after add/edit, refresh current page
+            fetchPackages(pagination.currentPage || 1);
+          }}
         />
       ) : loading ? (
         <Typography>Loading...</Typography>
@@ -161,23 +203,21 @@ const PackageListing = () => {
                     <TableCell>{pkg.packageType}</TableCell>
                     <TableCell>{pkg.startCity}</TableCell>
                     <TableCell>
-                      {pkg.destinationCity?.slice(-1)[0] || "-"}
+                      {Array.isArray(pkg.destinationCity) && pkg.destinationCity.length
+                        ? pkg.destinationCity.slice(-1)[0]
+                        : "-"}
                     </TableCell>
                     <TableCell>
-                      {pkg.packageDuration?.days}D /{" "}
-                      {pkg.packageDuration?.nights}N
+                      {pkg.packageDuration?.days ?? "-"}D / {pkg.packageDuration?.nights ?? "-"}N
                     </TableCell>
                     <TableCell align="center">
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleEdit(pkg)}
-                      >
+                      <Button size="small" variant="outlined" onClick={() => handleEdit(pkg)}>
                         Edit
                       </Button>
                     </TableCell>
                   </TableRow>
                 ))}
+
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} align="center">
@@ -188,26 +228,21 @@ const PackageListing = () => {
               </TableBody>
             </Table>
           </TableContainer>
+
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <Box
-              mt={2}
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-            >
-              <Button
-                disabled={pagination.currentPage === 1}
-                onClick={() => fetchPackages(pagination.currentPage - 1)}
-              >
+            <Box mt={2} display="flex" justifyContent="center" alignItems="center">
+              <Button disabled={pagination.currentPage === 1} onClick={handlePrev}>
                 Previous
               </Button>
+
               <Typography mx={2}>
                 Page {pagination.currentPage} of {pagination.totalPages}
               </Typography>
+
               <Button
                 disabled={pagination.currentPage === pagination.totalPages}
-                onClick={() => fetchPackages(pagination.currentPage + 1)}
+                onClick={handleNext}
               >
                 Next
               </Button>
