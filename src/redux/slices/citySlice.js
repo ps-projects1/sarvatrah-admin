@@ -117,7 +117,7 @@ const citySlice = createSlice({
       // Search
       if (state.filters.searchTerm) {
         filtered = filtered.filter((city) =>
-          city.name.toLowerCase().includes(state.filters.searchTerm.toLowerCase())
+          city?.name?.toLowerCase()?.includes(state.filters.searchTerm.toLowerCase())
         );
       }
 
