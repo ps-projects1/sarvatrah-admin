@@ -6,6 +6,7 @@ const Titel = () => {
   const navigate = useNavigate(); // Move useNavigate outside the function
   const _id = localStorage.getItem("_id");
   const [id] = useState(_id);
+  console.log(id, "id");
   useEffect(() => {
     (async function () {
       try {

@@ -87,7 +87,7 @@ const OpeningHours = () => {
       const availabilityData = {
         day: Object.keys(day)[0],
         isOpen: true,
-        open24Hours: day[key].open24Hours,
+        is24Hours: day[key].open24Hours,
         openHour: open24Hours ? "00:00" : openHour,
         closeHour: open24Hours ? "00:00" : closeHour,
       };

@@ -7,188 +7,135 @@ import {
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 const MeetingPickup = () => {
-  const [meetingOption, setMeetingOption] = useState("meet_on_location");
   const navigate = useNavigate();
-  const localId = localStorage.getItem("_id");
+  const experienceId = localStorage.getItem("_id");
 
-  const [experienceId] = useState(localId ? localId : "");
+  const [meetingOption, setMeetingOption] = useState("meet_on_location");
+
   useEffect(() => {
-    if (experienceId && experienceId.length > 0) {
-      (async function () {
-        const response = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
+    if (!experienceId) return;
 
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        const { traveller_facilty } = await response.json();
-        if (!traveller_facilty) {
-          setMeetingOption("meet_on_location");
-        } else {
-          setMeetingOption(traveller_facilty);
-        }
-      })();
-      return;
-    }
-    if (!experienceId) {
-      alert("Please fill in all the fields");
-      return;
-    }
+    (async function () {
+      const res = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`
+      );
+      const data = await res.json();
+
+      if (data?.traveller_facilty) {
+        setMeetingOption(data.traveller_facilty);
+      }
+    })();
   }, [experienceId]);
-  const goBack = () => {
-    navigate("/pricingCategories");
-  };
-  const submit = async () => {
-    const response = await fetch(
-     `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
 
+  const goBack = () => navigate("/pricingCategories");
+
+  const submit = async () => {
+    const res = await fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
       {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          traveller_facilty: meetingOption,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ traveller_facilty: meetingOption }),
       }
     );
-    const data = await response.json();
-    if (data) {
-      navigate("/meetingPoint", {
-        state: {
-          ...data,
-        },
-      });
-    }
+
+    const data = await res.json();
+    if (data) navigate("/meetingPoint");
   };
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: "20px",
-          marginBottom: "30px",
-        }}
-      >
-        <h2 style={{ fontWeight: "bold", padding: "5px" }}>
-          Can travellers be picked up for the experience?
-        </h2>
-        <p style={{ padding: "5px", textAlign: "center" }}>
-          ...or should the travellers meet you on location?
-        </p>
+    <div style={{ padding: 20, display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ marginBottom: 30, textAlign: "center" }}>
+        <h2 style={{ fontWeight: "bold" }}>Can travellers be picked up?</h2>
+        <p>Or should travellers meet you at your location?</p>
       </div>
 
       <div style={{ width: "70%" }}>
-        <FormControl style={{ width: "100%" }}>
+        <FormControl fullWidth>
           <RadioGroup
-            aria-labelledby="demo-radio-buttons-group-label"
-            defaultValue="female"
-            name="radio-buttons-group"
             value={meetingOption}
             onChange={(e) => setMeetingOption(e.target.value)}
           >
-            <div
-              style={{
-                border: "1px solid #DEE3EA",
-                borderRadius: "7px",
-                padding: "55px",
-                height: "100px",
-                display: "flex",
-                alignItems: "center",
-                marginTop: "10px",
-              }}
-            >
+            <OptionBox>
               <FormControlLabel
-                value="dateTime"
-                control={<Radio value="meet_on_location" />}
+                value="meet_on_location"
+                control={<Radio />}
               />
-              <div>
-                <h5>Meet on location</h5>
-                <span>
-                  This experience has no pick-up service, customers have to make
-                  their way to our meeting point.
-                </span>
-              </div>
-            </div>
-            <div
-              style={{
-                border: "1px solid #DEE3EA",
-                borderRadius: "7px",
-                padding: "55px",
-                height: "100px",
-                display: "flex",
-                alignItems: "center",
-                marginTop: "10px",
-              }}
-            >
+              <OptionText
+                title="Meet on Location"
+                desc="Travellers must reach the meeting point themselves."
+              />
+            </OptionBox>
+
+            <OptionBox>
               <FormControlLabel
-                value="date"
-                control={<Radio value="pick_up_only" />}
+                value="pick_up_only"
+                control={<Radio />}
               />
-              <div>
-                <h5>Pick-up only</h5>
-                <span>
-                  Customers must be picked up from selected pick-up locations.
-                </span>
-              </div>
-            </div>
-            <div
-              style={{
-                border: "1px solid #DEE3EA",
-                borderRadius: "7px",
-                padding: "55px",
-                height: "100px",
-                display: "flex",
-                alignItems: "center",
-                marginTop: "10px",
-              }}
-            >
+              <OptionText
+                title="Pick-Up Only"
+                desc="Travellers will be picked up from selected pickup points."
+              />
+            </OptionBox>
+
+            <OptionBox>
               <FormControlLabel
-                value="pass"
-                control={<Radio value="meet_on_location_or_pickup" />}
+                value="meet_on_location_or_pickup"
+                control={<Radio />}
               />
-              <div>
-                <h5>Pick-up and Drop</h5>
-                <span>
-                  Customers should be picked up and dropped back to the given location 
-                </span>
-              </div>
-            </div>
+              <OptionText
+                title="Pick-Up & Drop"
+                desc="Travellers get pickup and drop services."
+              />
+            </OptionBox>
+
           </RadioGroup>
         </FormControl>
       </div>
 
-      <div
-        style={{
-          width: "70%",
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "150px",
-        }}
-      >
-        <Button variant="outlined" onClick={goBack}>
-          Back
-        </Button>
-        <Button variant="contained" onClick={submit}>
-          Continue
-        </Button>
-      </div>
+      <FooterButtons back={goBack} submit={submit} />
     </div>
   );
 };
+
+// Reusable Components
+const OptionBox = ({ children }) => (
+  <div
+    style={{
+      border: "1px solid #DEE3EA",
+      borderRadius: 8,
+      padding: 40,
+      display: "flex",
+      alignItems: "center",
+      marginTop: 12,
+      gap: 10,
+    }}
+  >
+    {children}
+  </div>
+);
+
+const OptionText = ({ title, desc }) => (
+  <div>
+    <h5>{title}</h5>
+    <span>{desc}</span>
+  </div>
+);
+
+const FooterButtons = ({ back, submit }) => (
+  <div
+    style={{
+      width: "70%",
+      display: "flex",
+      justifyContent: "space-between",
+      marginTop: 100,
+    }}
+  >
+    <Button variant="outlined" onClick={back}>Back</Button>
+    <Button variant="contained" onClick={submit}>Continue</Button>
+  </div>
+);
 
 export default MeetingPickup;

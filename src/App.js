@@ -94,7 +94,6 @@ const routes = [
   { path: "/city", element: <City /> },
   { path: "/addVehicle", element: <AddVehicle /> },
   { path: "/addCategory", element: <AddCategory /> },
-  { path: "/addActivity", element: <AddActivity /> },
   { path: "/addAdvanture", element: <AddAdvanture /> },
   { path: "/holiday-packages", element: <PackageListing /> },
   { path: "/policy", element: <AddPolicy /> },
@@ -103,7 +102,29 @@ const routes = [
   { path: "/manageSeasonality", element: <ManageSeasonality /> },
   { path: "/manageVendor", element: <ManageVendor /> },
   { path: "/manageFooter", element: <ManageFooter /> },
+  { path: "/addactivity", element: <AddActivity /> },
+  { path: "/titel", element: <Titel /> },
+  { path: "/duration", element: <Duration /> },
+  { path: "/categories", element: <Categories /> },
+  { path: "/location", element: <Location /> },
+  { path: "/description", element: <Description /> },
+  { path: "/photos", element: <Photos /> },
+  { path: "/videos", element: <Videos /> },
+  { path: "/inclusions", element: <Inclusions /> },
+  { path: "/exclusions", element: <Exclusions /> },
+  { path: "/timeDatePass", element: <TimeDatePass /> },
+  { path: "/openingHours", element: <OpeningHours /> },
+  { path: "/bookingCutoff", element: <BookingCutoff /> },
+  { path: "/capacity", element: <Capacity /> },
+  { path: "/startTime", element: <StartTime /> },
+  { path: "/pricingCategories", element: <PricingCategories /> },
+  { path: "/rates", element: <Rates /> },
+  { path: "/pricing", element: <Pricing /> },
+  { path: "/meetingPickup", element: <MeetingPickup /> },
+  { path: "/meetingPoint", element: <MeetingPoint /> },
+  { path: "/calendar", element: <Calender /> },
 ];
+
 
 const activityRoutes = [
   { path: "/titel", component: Titel },
@@ -126,6 +147,8 @@ const activityRoutes = [
   { path: "/pricing", component: Pricing },
   { path: "/meetingPickup", component: MeetingPickup },
   { path: "/meetingPoint", component: MeetingPoint },
+   {  path: "/calendar", component: Calender }, 
+  
 ];
 
 // Main Layout wrapper for protected routes

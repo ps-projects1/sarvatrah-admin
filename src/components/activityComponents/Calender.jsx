@@ -3,1791 +3,819 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import rrulePlugin from "@fullcalendar/rrule";
 import {
   Autocomplete,
   Box,
   Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
   FormControlLabel,
   FormGroup,
-  Modal,
-  Radio,
-  RadioGroup,
+  FormLabel,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
   TextField,
   Typography,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
+  Stack,
+  Paper,
+  Tooltip,
+  Checkbox,
+  styled,
+  Alert,
+  Snackbar,
 } from "@mui/material";
-import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
+import {
+  LocalizationProvider,
+  DatePicker,
+} from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { Formik, Form, Field, FieldArray } from "formik";
+import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
-import rrulePlugin from "@fullcalendar/rrule";
+import {
+  Add as AddIcon,
+  Event as EventIcon,
+  Block as BlockIcon,
+  Schedule as ScheduleIcon,
+} from "@mui/icons-material";
 
-const style = {
-  marginTop: "10px",
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 900,
-  bgcolor: "background.paper",
-  // border: '2px solid #000',
-  boxShadow: 24,
-  p: "20px",
-  "@media(max-height: 890px)": {
-    top: "0",
-    transform: "translate(-50%, 0%)",
-  },
-};
-const daysArray = [
-  {
-    label: "Sunday",
-    value: "su",
-  },
-  {
-    label: "Monday",
-    value: "mo",
-  },
-  {
-    label: "Tuesday",
-    value: "tu",
-  },
-  {
-    label: "Wednesday",
-    value: "we",
-  },
-  {
-    label: "Thursday",
-    value: "th",
-  },
-  {
-    label: "Friday",
-    value: "fr",
-  },
-  {
-    label: "Saturday",
-    value: "sa",
-  },
+// Styled Components
+const CalendarContainer = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  margin: theme.spacing(2),
+  minHeight: '80vh',
+}));
+
+// Constants
+const DAYS_ARRAY = [
+  { label: "Sunday", value: "su" },
+  { label: "Monday", value: "mo" },
+  { label: "Tuesday", value: "tu" },
+  { label: "Wednesday", value: "we" },
+  { label: "Thursday", value: "th" },
+  { label: "Friday", value: "fr" },
+  { label: "Saturday", value: "sa" },
 ];
 
-const RecurringTypes = {
+const MONTH_ARRAY = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+const RECURRING_TYPES = {
   WEEKLY: "weekly",
   SPECIFIC_DATE: "specific_date",
   BETWEEN_TWO_DATES: "between_two_dates",
   MONTHLY_SELECTED_DAYS: "monthly_selected_days",
 };
 
-let todayStr = new Date().toISOString().replace(/T.*$/, "");
-
-const todayDate = new Date();
-
-
-const monthArray = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+const CATEGORIES = [
+  "Repeat weekly on selected days",
+  "Repeat yearly during selected months",
+  "happen between selected dates",
+  "happen on a selected date",
 ];
 
+const CATEGORIES_BLACKOUT = [
+  "Happen between selected dates",
+  "Happen on a selected date",
+];
+
+// Sub-form Components
+const ParticipantFields = ({ values, setFieldValue }) => (
+  <Card sx={{ mb: 3 }}>
+    <CardContent>
+      <Typography variant="h6" gutterBottom>
+        Participants (PAX)
+      </Typography>
+      <Typography variant="body2" color="text.secondary" gutterBottom>
+        The experience will only be bookable if minimum participants is met.
+      </Typography>
+      <Grid container spacing={2} alignItems="center">
+        <Grid item xs={5}>
+          <TextField
+            fullWidth
+            label="Minimum"
+            type="number"
+            value={values.participant?.minimum || 1}
+            onChange={(e) => setFieldValue("participant.minimum", parseInt(e.target.value) || 1)}
+          />
+        </Grid>
+        <Grid item xs={2} sx={{ textAlign: 'center' }}>
+          <Typography>to</Typography>
+        </Grid>
+        <Grid item xs={5}>
+          <TextField
+            fullWidth
+            label="Maximum"
+            type="number"
+            value={values.participant?.maximum || 20}
+            onChange={(e) => setFieldValue("participant.maximum", parseInt(e.target.value) || 20)}
+          />
+        </Grid>
+      </Grid>
+    </CardContent>
+  </Card>
+);
+
+const StartTimeSelection = ({ startTime, values, setFieldValue }) => (
+  <Card sx={{ mb: 3 }}>
+    <CardContent>
+      <Typography variant="h6" gutterBottom>
+        Start Times
+      </Typography>
+      <FormGroup row>
+        {startTime.map((time) => (
+          <FormControlLabel
+            key={time._id}
+            control={
+              <Checkbox
+                checked={values.start_time?.includes(time._id)}
+                onChange={(e) => {
+                  const newStartTimes = e.target.checked
+                    ? [...(values.start_time || []), time._id]
+                    : (values.start_time || []).filter(id => id !== time._id);
+                  setFieldValue("start_time", newStartTimes);
+                }}
+              />
+            }
+            label={time.start_time}
+          />
+        ))}
+      </FormGroup>
+    </CardContent>
+  </Card>
+);
+
+const FormActions = ({ onCancel, loading = false }) => (
+  <DialogActions>
+    <Button onClick={onCancel} disabled={loading}>Cancel</Button>
+    <Button type="submit" variant="contained" disabled={loading}>
+      {loading ? "Saving..." : "Save Availability"}
+    </Button>
+  </DialogActions>
+);
+
+const WeeklyForm = ({ startTime, onSubmit, onCancel, loading }) => {
+  const initialValues = {
+    days: [],
+    participant: { minimum: 1, maximum: 20 },
+    start_time: startTime[0]?._id ? [startTime[0]._id] : [],
+  };
+
+  return (
+    <Formik
+      initialValues={initialValues}
+      validationSchema={Yup.object({
+        days: Yup.array().min(1, "Select at least one day"),
+      })}
+      onSubmit={onSubmit}
+    >
+      {({ values, setFieldValue }) => (
+        <Form>
+          <FormControl component="fieldset" sx={{ mb: 3 }}>
+            <FormLabel component="legend">Select Days</FormLabel>
+            <FormGroup row>
+              {DAYS_ARRAY.map((day) => (
+                <FormControlLabel
+                  key={day.value}
+                  control={
+                    <Checkbox
+                      checked={values.days.includes(day.value)}
+                      onChange={(e) => {
+                        const newDays = e.target.checked
+                          ? [...values.days, day.value]
+                          : values.days.filter(d => d !== day.value);
+                        setFieldValue("days", newDays);
+                      }}
+                    />
+                  }
+                  label={day.label}
+                />
+              ))}
+            </FormGroup>
+          </FormControl>
+          <ParticipantFields values={values} setFieldValue={setFieldValue} />
+          <StartTimeSelection startTime={startTime} values={values} setFieldValue={setFieldValue} />
+          <FormActions onCancel={onCancel} loading={loading} />
+        </Form>
+      )}
+    </Formik>
+  );
+};
+
+const MonthlyForm = ({ startTime, onSubmit, onCancel, loading }) => {
+  const initialValues = {
+    months: [],
+    days: [],
+    participant: { minimum: 1, maximum: 20 },
+    start_time: startTime[0]?._id ? [startTime[0]._id] : [],
+  };
+
+  return (
+    <Formik
+      initialValues={initialValues}
+      validationSchema={Yup.object({
+        months: Yup.array().min(1, "Select at least one month"),
+        days: Yup.array().min(1, "Select at least one day"),
+      })}
+      onSubmit={onSubmit}
+    >
+      {({ values, setFieldValue }) => (
+        <Form>
+          <Grid container spacing={3}>
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Months</InputLabel>
+                <Select
+                  multiple
+                  value={values.months}
+                  onChange={(e) => setFieldValue("months", e.target.value)}
+                  renderValue={(selected) => selected.map(month => month.substring(0, 3)).join(', ')}
+                >
+                  {MONTH_ARRAY.map((month) => (
+                    <MenuItem key={month} value={month}>
+                      {month}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+          
+          <FormControl component="fieldset" sx={{ mt: 2, mb: 3 }}>
+            <FormLabel>Days of Week</FormLabel>
+            <FormGroup row>
+              {DAYS_ARRAY.map((day) => (
+                <FormControlLabel
+                  key={day.value}
+                  control={
+                    <Checkbox
+                      checked={values.days.includes(day.value)}
+                      onChange={(e) => {
+                        const newDays = e.target.checked
+                          ? [...values.days, day.value]
+                          : values.days.filter(d => d !== day.value);
+                        setFieldValue("days", newDays);
+                      }}
+                    />
+                  }
+                  label={day.label}
+                />
+              ))}
+            </FormGroup>
+          </FormControl>
+
+          <ParticipantFields values={values} setFieldValue={setFieldValue} />
+          <StartTimeSelection startTime={startTime} values={values} setFieldValue={setFieldValue} />
+          <FormActions onCancel={onCancel} loading={loading} />
+        </Form>
+      )}
+    </Formik>
+  );
+};
+
+const DateRangeForm = ({ startTime, onSubmit, onCancel, loading }) => (
+  <Formik
+    initialValues={{
+      startDate: dayjs(),
+      endDate: dayjs().add(1, 'month'),
+      participant: { minimum: 1, maximum: 20 },
+      start_time: startTime[0]?._id ? [startTime[0]._id] : [],
+    }}
+    validationSchema={Yup.object({
+      startDate: Yup.date().required("Start date is required"),
+      endDate: Yup.date()
+        .min(Yup.ref("startDate"), "End date must be after start date")
+        .required("End date is required"),
+    })}
+    onSubmit={onSubmit}
+  >
+    {({ values, setFieldValue }) => (
+      <Form>
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid item xs={6}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Start Date"
+                value={values.startDate}
+                onChange={(date) => setFieldValue("startDate", date)}
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+            </LocalizationProvider>
+          </Grid>
+          <Grid item xs={6}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="End Date"
+                value={values.endDate}
+                onChange={(date) => setFieldValue("endDate", date)}
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+            </LocalizationProvider>
+          </Grid>
+        </Grid>
+        <ParticipantFields values={values} setFieldValue={setFieldValue} />
+        <StartTimeSelection startTime={startTime} values={values} setFieldValue={setFieldValue} />
+        <FormActions onCancel={onCancel} loading={loading} />
+      </Form>
+    )}
+  </Formik>
+);
+
+const SingleDateForm = ({ startTime, onSubmit, onCancel, selectedDate, loading }) => (
+  <Formik
+    initialValues={{
+      selectedDate: selectedDate,
+      participant: { minimum: 1, maximum: 20 },
+      start_time: startTime[0]?._id ? [startTime[0]._id] : [],
+    }}
+    validationSchema={Yup.object({
+      selectedDate: Yup.date().required("Date is required"),
+    })}
+    onSubmit={onSubmit}
+  >
+    {({ values, setFieldValue }) => (
+      <Form>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DatePicker
+            label="Select Date"
+            value={values.selectedDate}
+            onChange={(date) => setFieldValue("selectedDate", date)}
+            slotProps={{ textField: { fullWidth: true, sx: { mb: 3 } } }}
+          />
+        </LocalizationProvider>
+        <ParticipantFields values={values} setFieldValue={setFieldValue} />
+        <StartTimeSelection startTime={startTime} values={values} setFieldValue={setFieldValue} />
+        <FormActions onCancel={onCancel} loading={loading} />
+      </Form>
+    )}
+  </Formik>
+);
+
+// Availability Form Component
+const AvailabilityForm = ({ type = 'availability', open, onClose, startTime, selectedDate, onSubmit, loading }) => {
+  const categories = type === 'availability' ? CATEGORIES : CATEGORIES_BLACKOUT;
+  const [selected, setSelected] = useState(type === 'availability' ? CATEGORIES[3] : CATEGORIES_BLACKOUT[0]);
+
+  const renderFormContent = () => {
+    const commonProps = {
+      startTime,
+      onSubmit: (values) => onSubmit(values, getRecurringType(selected)),
+      onCancel: onClose,
+      loading,
+    };
+
+    switch (selected) {
+      case "Repeat weekly on selected days":
+        return <WeeklyForm {...commonProps} />;
+      case "Repeat yearly during selected months":
+        return <MonthlyForm {...commonProps} />;
+      case "happen between selected dates":
+      case "Happen between selected dates":
+        return <DateRangeForm {...commonProps} />;
+      case "happen on a selected date":
+      case "Happen on a selected date":
+        return <SingleDateForm {...commonProps} selectedDate={selectedDate} />;
+      default:
+        return null;
+    }
+  };
+
+  const getRecurringType = (category) => {
+    const typeMap = {
+      "Repeat weekly on selected days": RECURRING_TYPES.WEEKLY,
+      "Repeat yearly during selected months": RECURRING_TYPES.MONTHLY_SELECTED_DAYS,
+      "happen between selected dates": RECURRING_TYPES.BETWEEN_TWO_DATES,
+      "Happen between selected dates": RECURRING_TYPES.BETWEEN_TWO_DATES,
+      "happen on a selected date": RECURRING_TYPES.SPECIFIC_DATE,
+      "Happen on a selected date": RECURRING_TYPES.SPECIFIC_DATE,
+    };
+    return typeMap[category] || RECURRING_TYPES.SPECIFIC_DATE;
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          {type === 'availability' ? <EventIcon /> : <BlockIcon />}
+          <Typography variant="h6">
+            {type === 'availability' ? 'Add Availability' : 'Set Blackout'}
+          </Typography>
+        </Stack>
+      </DialogTitle>
+      
+      <DialogContent>
+        <FormControl fullWidth sx={{ mb: 3, mt: 1 }}>
+          <Autocomplete
+            value={selected}
+            onChange={(e, newValue) => setSelected(newValue)}
+            options={categories}
+            renderInput={(params) => (
+              <TextField {...params} label="Rule Type" />
+            )}
+          />
+        </FormControl>
+
+        {renderFormContent()}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Main Component
 const Calendar = () => {
   const localId = localStorage.getItem("_id");
   const [experienceId] = useState(localId ? localId : null);
-  const [weekendsVisible] = useState(true);
   const [currentEvents, setCurrentEvents] = useState([]);
-  const [open, setOpen] = React.useState(false);
-  const [blackOut, setBlackOut] = React.useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(
-    "happen on a selected date"
-  );
-  const [selectedBlackout, setSelectedBlackout] = useState(
-    "Happen between selected dates"
-  );
- 
- 
-  const [selectedDate, setSelectedDate] = useState(todayDate);
   const [startTime, setStartTime] = useState([]);
+  const [openModal, setOpenModal] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const navigate = useNavigate();
-  const handleOpen = () => setOpen(true);
-  const handleBlackout = () => setBlackOut(true);
-  const [currentSelectedStartTime, setCurrentStartTime] = useState([]);
-  const [currentSelectedInfo, setCurrentSelectInfo] = useState({});
-  const [deleteEventModal, setDeleteEventModal] = useState(false);
 
-  const handleClose = () => {
-    setOpen(false);
-    setSelectedCategory("happen on a selected date");
-  };
-  const handleCloseBlack = () => {
-    setBlackOut(false);
-    // setSelectedBlackout("Happen on a selected date");
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
   };
 
+  // Modal handlers
+  const handleOpenModal = (type) => setOpenModal(type);
+  const handleCloseModal = () => {
+    setOpenModal(null);
+    setLoading(false);
+  };
+
+  // Data fetching
   useEffect(() => {
-    if (!experienceId && experienceId?.length === 0) {
-      alert("please add titel and categories");
+    if (!experienceId) {
+      alert("Please add title and categories");
       navigate("/titel");
       return;
     }
-    (async function () {
+    fetchCalendarData();
+  }, [experienceId, navigate]);
+
+  const fetchCalendarData = async () => {
+    try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
-
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`
       );
-      const responseJson = await response.json();
-      const { calender_events } = responseJson;
-      if (calender_events && calender_events.length > 0) {
-        // const events = calender_events.map((item) => item.event);
-        setCurrentEvents(calender_events);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    })();
-    getStartTIme();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const getStartTIme = async () => {
-    const response = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
+      
+      const data = await response.json();
+      console.log("Fetched experience data:", data); // Debug log
+      
+      // FIXED: Proper event normalization for FullCalendar
+     if (data.calender_events?.length > 0) {
+  const normalizedEvents = data.calender_events.map(event => {
+    if (!event._id || !event.rrule) return null;
 
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+    // Extract actual HH:mm from dtstart
+    let dtstart = event.rrule.dtstart;               // e.g. "2025-11-27T04:20"
+    let finalDtStart = dtstart.includes(":00")
+      ? dtstart
+      : dtstart + ":00";                             // ensure seconds added
+
+    // Split time into hour/minute parts
+    const timePart = finalDtStart.split("T")[1];     // "04:20:00"
+    const [hour, minute] = timePart.split(":").map(Number);
+
+    // Fix byhour, byminute, bysecond
+    const fixedRRule = {
+      ...event.rrule,
+      byhour: hour,                                  // NOT array
+      byminute: minute,
+      bysecond: 0,
+      dtstart: finalDtStart,                         // keep exact time
+      until: event.rrule.until 
+        ? event.rrule.until.includes("T") 
+          ? event.rrule.until 
+          : event.rrule.until + "T23:59:59"
+        : undefined
+    };
+
+    return {
+      id: event._id,
+      title: event.title || (event.isBlackout ? "Blackout" : "Available"),
+      rrule: fixedRRule,
+      duration: "01:00",                              // REQUIRED for FullCalendar
+      extendedProps: {
+        _id: event._id,
+        start_time: event.start_time,
+        participant: event.participant,
+        isBlackout: event.isBlackout || false
+      },
+      backgroundColor: event.isBlackout ? '#ff4444' : '#4CAF50',
+      borderColor: event.isBlackout ? '#d32f2f' : '#2E7D32',
+      textColor: "#ffffff"
+    };
+  }).filter(Boolean);
+
+  console.log("Normalized events for calendar:", normalizedEvents);
+  setCurrentEvents(normalizedEvents);
+
+} else {
+  console.log("No calendar events found or events array is empty");
+  setCurrentEvents([]);
+}
+
+      
+      if (data.start_time?.length > 0) {
+        setStartTime(data.start_time);
       }
-    );
-    const { start_time } = await response.json();
-    if (start_time && start_time.length > 0) {
-      // console.log(start_time, "start_time");
-      setStartTime(start_time);
-      setCurrentStartTime(start_time[0]);
-      return;
+    } catch (error) {
+      console.error("Error fetching calendar data:", error);
+      showSnackbar('Error loading calendar data', 'error');
     }
-    // alert("Start time not found please add start time");
-    // navigate("/startTime");
   };
-  const handleCategoryChange = (event, newValue) => {
-    setSelectedCategory(newValue);
-  };
-  const handleBlackoutChange = (event, newValue) => {
-    setSelectedBlackout(newValue);
-  };
-
-
 
   const handleDateSelect = (selectInfo) => {
-    handleOpen();
-    // setCurrentSelectInfo(selectInfo);
-    // // let title = prompt("Please enter a new title for your event");
-    // let calendarApi = selectInfo.view.calendar;
-    // calendarApi.unselect();
+    setSelectedDate(dayjs(selectInfo.start));
+    handleOpenModal('availability');
   };
 
   const handleEventClick = (clickInfo) => {
-    setDeleteEventModal(true);
-    console.log(clickInfo, " clickInfo");
-    setCurrentSelectInfo(clickInfo);
+    console.log("Event clicked:", clickInfo.event);
+    // You can add edit/delete functionality here
   };
-  const deleteEvent = async () => {
-    setDeleteEventModal(false);
+
+  const handleSubmitEvent = async (values, type) => {
+    try {
+      setLoading(true);
+      const eventData = prepareEventData(values, type);
+      
+      console.log("Submitting event data:", eventData); // Debug log
+      
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/experience/events/${experienceId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(eventData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      showSnackbar('Event added successfully');
+      fetchCalendarData(); // Refresh events
+    } catch (error) {
+      console.error("Error submitting event:", error);
+      showSnackbar('Error adding event', 'error');
+    } finally {
+      setLoading(false);
+      handleCloseModal();
+    }
+  };
+
+  const prepareEventData = (formVal, type) => {
+    const selectedStartTimes = startTime.filter(time => 
+      formVal.start_time.includes(time._id)
+    );
     
-    const data = {
-      calenderEvnetId: currentSelectedInfo.event?.extendedProps?._id,
-    };
-    console.log(data, "data");
-    const deleteEvets = await fetch(
-`${process.env.REACT_APP_API_BASE_URL}/experience/events/${experienceId}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
-    );
-    const response = await deleteEvets.json();
-    console.log(response, "response");
-    setCurrentEvents(response);
-    // setCurrentEvents(events);
-  };
- 
-
-  const renderEventContent = (eventInfo) => (
-    <>
-      <b>{eventInfo.timeText}</b>
-      {/* <i>{eventInfo.event.title}</i> */}
-      <i>
-        {eventInfo.event?.start_time
-          ? startTime.find((time) => time._id === eventInfo.event?.start_time)
-              .start_time
-          : ""}
-      </i>
-    </>
-  );
-
-  const handleEventAdd = (event) => {};
-  const handleOnFormSubmit = async () => {
-    const data = currentEvents;
-    if (data.length === 0) {
-      alert("Please add events");
-      return;
-    }
-    navigate("/pricingCategories");
-  };
-
- 
-  const handleBackendEventAdd = async (event) => {
-    const data = event;
-    const result = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/experience/events/${experienceId}`
-,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
-    );
-    const response = await result.json();
-    setCurrentEvents(response);
-    handleClose();
-    // setCurrentEvents(response);
-    console.log(response, "response");
-  };
-  const subMitingData = async (formVal, type = RecurringTypes.WEEKLY) => {
-    console.log(formVal, "formVal");
-    let startStr = startTime.find((time) => {
-      if (time && formVal.start_time.includes(time._id)) {
-        return true;
-      }
-      return false;
+    const startHoursArr = selectedStartTimes.map(time => {
+      const [hours] = time.start_time.split(":");
+      return parseInt(hours);
     });
-    let startHoursArr = [];
-    let startMinutesArr = [];
-    for (let i = 0; i < startTime?.length; i++) {
-      if (startTime[i] && formVal.start_time.includes(startTime[i]._id)) {
-        const [startHours, startMinutes] = startTime[i].start_time.split(":");
-        startHoursArr.push(startHours);
-        startMinutesArr.push(startMinutes);
-      }
-    }
-    startStr = startStr ? startStr.start_time : "";
-    const todayStrWithTime = `${todayStr}T${startStr}`;
+
+    const firstStartTime = selectedStartTimes[0]?.start_time || "09:00";
+    const isBlackout = openModal === 'blackout';
+    
+    const baseConfig = {
+      start_time: formVal.start_time,
+      participant: formVal.participant,
+      title: isBlackout ? "Blackout Period" : "Available Time Slot",
+      isBlackout: isBlackout,
+    };
+
     switch (type) {
-      case RecurringTypes.WEEKLY:
-        const days = [];
-        formVal.days.forEach((day) => {
-          if (day && day.length > 0) {
-            days.push(day.join(""));
-          }
-        });
-        const backendEvent = {
-          title: "my recurring event",
+      case RECURRING_TYPES.WEEKLY:
+        const days = formVal.days.filter(Boolean);
+        return {
+          ...baseConfig,
           rrule: {
             freq: "weekly",
             interval: 1,
             byweekday: days,
-            dtstart: todayStrWithTime,
-            until: formVal.endDate
-              ? dayjs(formVal.endDate).format("YYYY-MM-DD")
-              : "2025-06-01",
-            byhour: startHoursArr.map((hour) => parseInt(hour)),
+            dtstart: `${dayjs().format('YYYY-MM-DD')}T${firstStartTime}`,
+            until: formVal.endDate ? dayjs(formVal.endDate).format("YYYY-MM-DD") : "2025-12-31",
+            byhour: startHoursArr,
           },
-          start_time: formVal.start_time,
-          participant: formVal.participant,
         };
-        console.log(backendEvent, "backendEvent for weekly");
-        handleBackendEventAdd(backendEvent);
-        return backendEvent;
-      case RecurringTypes.MONTHLY_SELECTED_DAYS:
-        console.log(formVal, "formVal");
-        const daysForMont = [];
-        formVal.days.forEach((day) => {
-          if (day && day.length > 0) {
-            daysForMont.push(day.join(""));
-          }
-        });
-        const monthlyEvent = {
-          title: "my recurring event",
+
+      case RECURRING_TYPES.MONTHLY_SELECTED_DAYS:
+        const monthDays = formVal.days.filter(Boolean);
+        return {
+          ...baseConfig,
           rrule: {
             freq: "monthly",
             interval: 1,
-            bymonth: formVal.months
-              .map((monthStr) => {
-                return monthArray.indexOf(monthStr) + 1;
-              })
-              .sort(),
-            dtstart: todayStrWithTime,
-            byweekday: daysForMont,
-            until: formVal.endDate
-              ? dayjs(formVal.endDate).format("YYYY-MM-DD")
-              : "2025-06-01",
-            byhour: startHoursArr.map((hour) => parseInt(hour)),
+            bymonth: formVal.months.map(month => MONTH_ARRAY.indexOf(month) + 1).sort(),
+            byweekday: monthDays,
+            dtstart: `${dayjs().format('YYYY-MM-DD')}T${firstStartTime}`,
+            until: formVal.endDate ? dayjs(formVal.endDate).format("YYYY-MM-DD") : "2025-12-31",
+            byhour: startHoursArr,
           },
-          start_time: formVal.start_time,
-          participant: formVal.participant,
         };
-        handleBackendEventAdd(monthlyEvent);
-        setCurrentEvents(monthlyEvent);
-        console.log(monthlyEvent, "backendEvent for monthly");
-        return;
-      case RecurringTypes.SPECIFIC_DATE:
-        console.log(formVal, "formVal00000000000");
-        const selectedDate = dayjs(formVal.selectedDate);
-        const formattedDate = selectedDate.format("YYYY-MM-DD");
 
-        const startTimestrForsingle = `${formattedDate}T${startStr}`;
-
-        const specificEvent = {
-          title: startTime.find((time) => time._id === formVal.start_time),
+      case RECURRING_TYPES.SPECIFIC_DATE:
+        return {
+          ...baseConfig,
           rrule: {
             freq: "daily",
             interval: 1,
-            dtstart: startTimestrForsingle,
-            byhour: startHoursArr.map((hour) => parseInt(hour)),
-            count: startHoursArr.length,
+            dtstart: `${dayjs(formVal.selectedDate).format('YYYY-MM-DD')}T${firstStartTime}`,
+            byhour: startHoursArr,
+            count: 1,
           },
-          start_time: formVal.start_time,
-          participant: formVal.participant,
         };
 
-        console.log(specificEvent, "backendEvent for specific date");
-        handleBackendEventAdd(specificEvent);
-        return;
-      case RecurringTypes.BETWEEN_TWO_DATES:
-        console.log(formVal, "formVal");
-        const startDateBy = dayjs(formVal.startDate);
-        const formatedStartDateBy = startDateBy.format("YYYY-MM-DD");
-        const startTimestr = `${formatedStartDateBy}T${startStr}`;
-        const untilDate = dayjs(formVal.endDate);
-        const untilDateStr = untilDate.format("YYYY-MM-DD");
-        const betweenEvent = {
-          title: startTime.find((time) => time._id === formVal.start_time),
+      case RECURRING_TYPES.BETWEEN_TWO_DATES:
+        return {
+          ...baseConfig,
           rrule: {
             freq: "daily",
             interval: 1,
-            dtstart: startTimestr,
-            until: untilDateStr,
-            byhour: startHoursArr.map((hour) => parseInt(hour)),
+            dtstart: `${dayjs(formVal.startDate).format('YYYY-MM-DD')}T${firstStartTime}`,
+            until: dayjs(formVal.endDate).format("YYYY-MM-DD"),
+            byhour: startHoursArr,
           },
-          start_time: formVal.start_time,
-          participant: formVal.participant,
         };
-        handleBackendEventAdd(betweenEvent);
-        setCurrentEvents([betweenEvent]);
-        break;
+
       default:
-        break;
+        return baseConfig;
     }
   };
 
-  const renderSwitchForm = () => {
-    switch (selectedCategory) {
-      case "Repeat weekly on selected days":
-        return (
-          <Formik
-            initialValues={{
-              days: [],
-              participant: { minimum: 0, maximum: 100 },
-              start_time: startTime[0]._id,
-            }}
-            validationSchema={Yup.object({
-              days: Yup.array()
-                .min(1, "Select at least one day")
-                .required("Days are required"),
-            })}
-            onSubmit={(values, { setSubmitting }) => {
-              // console.log(values, "values");
-              if (!values.start_time) {
-                values.start_time = startTime[0]._id;
-              }
-              subMitingData(values);
-              setSubmitting(false);
-            }}
-          >
-            {({ values, setFieldValue }) => (
-              <Form style={{ padding: "25px" }}>
-                <h6>Affected days</h6>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span
-                    style={{
-                      fontStyle: "italic",
-                      paddingBottom: "5px",
-                      fontSize: "15px",
-                    }}
-                  >
-                    Select which days this availability rule applies to.
-                  </span>
-                  <FieldArray name="days">
-                    {({ form, push, remove }) => (
-                      <>
-                        {daysArray.map((day, index) => (
-                          <div key={index}>
-                            <Field
-                              type="checkbox"
-                              name={`days.${index}`}
-                              value={day.value}
-                            />
-                            {day.label}
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </FieldArray>
-                  <div>
-                    <h6>Participants (PAX)</h6>
-                    <span
-                      style={{
-                        fontStyle: "italic",
-                        paddingBottom: "5px",
-                        fontSize: "15px",
-                      }}
-                    >
-                      The experience will only be bookable if minimum
-                      participants is met.
-                    </span>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "15px",
-                        paddingTop: "5px",
-                      }}
-                    >
-                      <div style={{ width: "20%" }}>
-                        <TextField
-                          size="small"
-                          id="outlined-number"
-                          type="number"
-                          value={values.participant?.minimum}
-                          onChange={(e) =>
-                            setFieldValue("participant.minimum", e.target.value)
-                          }
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-                      </div>
-                      <div>minimum</div>
-                      <div style={{ width: "20%" }}>
-                        <TextField
-                          size="small"
-                          id="outlined-number"
-                          type="number"
-                          value={values.participant?.maximum}
-                          onChange={(e) =>
-                            setFieldValue("participant.maximum", e.target.value)
-                          }
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-                      </div>
-                      <div>maximum</div>
-                    </div>
-                    {/*display start Time checkBox*/}
-                    <div>
-                      <h6>Select all start times</h6>
-                      <FieldArray name="start_time">
-                        {({ form, push, remove }) => (
-                          <>
-                            {startTime.map((time, index) => (
-                              <div key={index}>
-                                <Field
-                                  type="checkbox"
-                                  name={`start_time.${index}`}
-                                  onChange={(e) => {
-                                    const isChecked = e.target.checked;
-                                    const timeId = time._id;
-                                    const startTimes = values.start_time || [];
-                                    console.log(startTimes, "startTimes");
-                                    if (
-                                      isChecked &&
-                                      !startTimes.includes(timeId)
-                                    ) {
-                                      setFieldValue("start_time", [
-                                        ...startTimes,
-                                        timeId,
-                                      ]);
-                                    } else if (
-                                      !isChecked &&
-                                      startTimes.includes(timeId)
-                                    ) {
-                                      setFieldValue(
-                                        "start_time",
-                                        startTimes.filter((id) => id !== timeId)
-                                      );
-                                    }
-                                  }}
-                                  checked={
-                                    values.start_time
-                                      ? values.start_time.includes(time._id)
-                                      : false
-                                  }
-                                />
-                                {time.start_time}
-                              </div>
-                            ))}
-                          </>
-                        )}
-                      </FieldArray>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleClose}
-                  variant="outlined"
-                  color="primary"
-                  className="btn btn-primary"
-                  style={{ marginRight: "10px" }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  className="btn btn-primary"
-                  type="submit"
-                >
-                  Submit
-                </Button>
-              </Form>
-            )}
-          </Formik>
-        );
-
-      case "Repeat yearly during selected months":
-        return (
-          <Formik
-            initialValues={{
-              months: [],
-              participant: { minimum: 0, maximum: 100 },
-              start_time: startTime[0]._id,
-            }}
-            validationSchema={Yup.object({
-              months: Yup.array()
-                .min(1, "Select at least one month")
-                .required("Months are required"),
-            })}
-            onSubmit={(values, { setSubmitting }) => {
-              console.log(values);
-              if (!values.start_time) {
-                values.start_time = startTime[0]._id;
-              }
-              subMitingData(values, RecurringTypes.MONTHLY_SELECTED_DAYS);
-              setSubmitting(false);
-            }}
-          >
-            {({ values, setFieldValue }) => (
-              <Form style={{ padding: "25px" }}>
-                <h6>Affected months</h6>
-                <span
-                  style={{
-                    fontStyle: "italic",
-                    paddingBottom: "5px",
-                    fontSize: "15px",
-                  }}
-                >
-                  Select which month(s) this availability rule applies to.
-                </span>
-                <FormControl fullWidth>
-                  <InputLabel htmlFor="months">Affected Months</InputLabel>
-                  <Select
-                    multiple
-                    name="months"
-                    value={values.months || []}
-                    onChange={(e) => setFieldValue("months", e.target.value)}
-                    label="Affected Months"
-                  >
-                    {monthArray.map((month, index) => (
-                      <MenuItem key={index} value={month}>
-                        {month}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <h6>Affected days</h6>
-                <FieldArray name="days">
-                  {({ form, push, remove }) => (
-                    <>
-                      {daysArray.map((day, index) => (
-                        <div key={index}>
-                          <Field
-                            type="checkbox"
-                            name={`days.${index}`}
-                            value={day.value}
-                          />
-                          {day.label}
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </FieldArray>
-                <div>
-                  <h6>Participants (PAX)</h6>
-                  <span
-                    style={{
-                      fontStyle: "italic",
-                      paddingBottom: "5px",
-                      fontSize: "15px",
-                    }}
-                  >
-                    The experience will only be bookable if minimum participants
-                    is met.
-                  </span>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "15px",
-                      paddingTop: "5px",
-                    }}
-                  >
-                    <div style={{ width: "20%" }}>
-                      <TextField
-                        size="small"
-                        id="outlined-number"
-                        type="number"
-                        value={values.participant?.minimum}
-                        onChange={(e) =>
-                          setFieldValue("participant.minimum", e.target.value)
-                        }
-                        InputLabelProps={{
-                          shrink: true,
-                        }}
-                      />
-                    </div>
-                    <div>minimum</div>
-                    <div style={{ width: "20%" }}>
-                      <TextField
-                        size="small"
-                        id="outlined-number"
-                        type="number"
-                        value={values.participant?.maximum}
-                        onChange={(e) =>
-                          setFieldValue("participant.maximum", e.target.value)
-                        }
-                        InputLabelProps={{
-                          shrink: true,
-                        }}
-                      />
-                    </div>
-                    <div>maximum</div>
-                  </div>
-                </div>
-                <div>
-                  <h6>Select all start times</h6>
-
-                  <FieldArray name="start_time">
-                    {({ form, push, remove }) => (
-                      <>
-                        {startTime.map((time, index) => (
-                          <div key={index}>
-                            <Field
-                              type="checkbox"
-                              name={`start_time.${index}`}
-                              onChange={(e) => {
-                                const isChecked = e.target.checked;
-                                const timeId = time._id;
-                                const startTimes = values.start_time || [];
-                                console.log(startTimes, "startTimes");
-                                if (isChecked && !startTimes.includes(timeId)) {
-                                  setFieldValue("start_time", [
-                                    ...startTimes,
-                                    timeId,
-                                  ]);
-                                } else if (
-                                  !isChecked &&
-                                  startTimes.includes(timeId)
-                                ) {
-                                  setFieldValue(
-                                    "start_time",
-                                    startTimes.filter((id) => id !== timeId)
-                                  );
-                                }
-                              }}
-                              checked={
-                                values.start_time
-                                  ? values.start_time.includes(time._id)
-                                  : false
-                              }
-                            />
-                            {time.start_time}
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </FieldArray>
-                </div>
-                <Button
-                  onClick={handleClose}
-                  variant="outlined"
-                  color="primary"
-                  className="btn btn-primary"
-                  style={{ marginRight: "10px" }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  className="btn btn-primary"
-                  type="submit"
-                >
-                  Submit
-                </Button>{" "}
-              </Form>
-            )}
-          </Formik>
-        );
-
-      case "happen beatween selected dates":
-        return (
-          <Formik
-            initialValues={{
-              startDate: null,
-              endDate: null,
-              participant: { minimum: 0, maximum: 100 },
-            }}
-            validationSchema={Yup.object({
-              startDate: Yup.date().required("Start date is required"),
-              endDate: Yup.date()
-                .min(Yup.ref("startDate"), "End date must be after start date")
-                .required("End date is required"),
-            })}
-            onSubmit={(values, { setSubmitting }) => {
-              console.log(values);
-              if (!values.start_time) {
-                values.start_time = startTime[0]._id;
-              }
-              subMitingData(values, RecurringTypes.BETWEEN_TWO_DATES);
-              setSubmitting(false);
-            }}
-          >
-            {({ values, setFieldValue }) => (
-              <Form style={{ padding: "25px" }}>
-                <h6>Affected dates</h6>
-                <span
-                  style={{
-                    fontStyle: "italic",
-                  }}
-                >
-                  Select which dates this availability rule applies to.
-                </span>
-                <div
-                  style={{
-                    display: "flex",
-                  }}
-                >
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DemoContainer components={["DatePicker"]}>
-                      <DatePicker
-                        label="Start date"
-                        onChange={(newValue) => {
-                          setFieldValue("startDate", newValue);
-                        }}
-                        renderInput={(params) => (
-                          <TextField>{params.inputProps.value}</TextField>
-                        )}
-                        value={values.startDate || ""}
-                      />
-                    </DemoContainer>
-                  </LocalizationProvider>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DemoContainer components={["DatePicker"]}>
-                      <DatePicker
-                        label="End date"
-                        onChange={(newValue) => {
-                          setFieldValue("endDate", newValue);
-                        }}
-                        renderInput={(params) => (
-                          <TextField>{params.inputProps.value}</TextField>
-                        )}
-                        value={values.endDate || null}
-                      />
-                    </DemoContainer>
-                  </LocalizationProvider>
-                </div>
-                <div>
-                  <h6>Participants (PAX)</h6>
-                  <span
-                    style={{
-                      fontStyle: "italic",
-                      paddingBottom: "5px",
-                      fontSize: "15px",
-                    }}
-                  >
-                    The experience will only be bookable if minimum participants
-                    are met.
-                  </span>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "15px",
-                      paddingTop: "5px",
-                    }}
-                  >
-                    <div style={{ width: "20%" }}>
-                      <Field name="participant.minimum">
-                        {({ field }) => (
-                          <TextField
-                            size="small"
-                            id="outlined-number"
-                            type="number"
-                            {...field}
-                            InputLabelProps={{
-                              shrink: true,
-                            }}
-                            onChange={(e) => {
-                              if (e.target.value > values.participant.maximum) {
-                                setFieldValue(
-                                  "participant.maximum",
-                                  e.target.value
-                                );
-                              }
-                            }}
-                            value={values.participant?.minimum || 0}
-                          />
-                        )}
-                      </Field>
-                    </div>
-                    <div>minimum</div>
-                    <div style={{ width: "20%" }}>
-                      <Field name="participant.maximum">
-                        {({ field }) => (
-                          <TextField
-                            size="small"
-                            id="outlined-number"
-                            type="number"
-                            {...field}
-                            InputLabelProps={{
-                              shrink: true,
-                            }}
-                            onChange={(e) => {
-                              if (
-                                e.target.value < values?.participant?.minimum
-                              ) {
-                                setFieldValue(
-                                  "participant.minimum",
-                                  e.target.value
-                                );
-                              }
-                            }}
-                            value={values?.participant?.maximum || 100}
-                          />
-                        )}
-                      </Field>
-                    </div>
-                    <div>maximum</div>
-                  </div>
-
-                  <div style={{ paddingTop: "20px" }}>
-                    <h6>Select all start times</h6>
-                    <span
-                      style={{
-                        fontStyle: "italic",
-                        paddingBottom: "5px",
-                        fontSize: "15px",
-                      }}
-                    >
-                      {" "}
-                      Select all start times{" "}
-                    </span>
-                    <FieldArray name="start_time">
-                      {({ form, push, remove }) => (
-                        <>
-                          {startTime.map((time, index) => (
-                            <div key={index}>
-                              <Field
-                                type="checkbox"
-                                name={`start_time.${index}`}
-                                onChange={(e) => {
-                                  const isChecked = e.target.checked;
-                                  const timeId = time._id;
-                                  const startTimes = values.start_time || [];
-                                  console.log(startTimes, "startTimes");
-                                  if (
-                                    isChecked &&
-                                    !startTimes.includes(timeId)
-                                  ) {
-                                    setFieldValue("start_time", [
-                                      ...startTimes,
-                                      timeId,
-                                    ]);
-                                  } else if (
-                                    !isChecked &&
-                                    startTimes.includes(timeId)
-                                  ) {
-                                    setFieldValue(
-                                      "start_time",
-                                      startTimes.filter((id) => id !== timeId)
-                                    );
-                                  }
-                                }}
-                                checked={
-                                  values.start_time
-                                    ? values.start_time.includes(time._id)
-                                    : false
-                                }
-                              />
-                              {time.start_time}
-                            </div>
-                          ))}
-                        </>
-                      )}
-                    </FieldArray>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleClose}
-                  variant="outlined"
-                  color="primary"
-                  className="btn btn-primary"
-                  style={{ marginRight: "10px" }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  className="btn btn-primary"
-                  type="submit"
-                >
-                  Submit
-                </Button>{" "}
-              </Form>
-            )}
-          </Formik>
-        );
-      case "happen on a selected date":
-        return (
-          <Formik
-            initialValues={{ selectedDate: selectedDate }}
-            validationSchema={Yup.object({
-              selectedDate: Yup.date().required("Date is required"),
-            })}
-            onSubmit={(values, { setSubmitting }) => {
-              setSubmitting(false);
-              if (!values.start_time) {
-                values.start_time = startTime[0]._id;
-              }
-              subMitingData(values, RecurringTypes.SPECIFIC_DATE);
-            }}
-          >
-            {({ values, setFieldValue }) => (
-              <Form style={{ padding: "25px" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DemoContainer components={["DatePicker"]}>
-                      <DatePicker
-                        name="selectedDate"
-                        value={dayjs(selectedDate)}
-                        onChange={(date) => {
-                          setFieldValue("selectedDate", date);
-                          setSelectedDate(date);
-                        }}
-                        // slotProps={{ textField: { size: "small" } }}
-                      />
-                    </DemoContainer>
-                  </LocalizationProvider>
-                  <FormGroup>
-                    {/* <FormControlLabel
-                      control={<Switch />}
-                      label="Switch"
-                      name="switch"
-                      onChange={(e) => setIsEventAllTime(e.target.checked)}
-                      checked={isEventAllTime}
-                      // Handle switch state here if needed
-                    /> */}
-                  </FormGroup>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "40px",
-                  }}
-                >
-                  <div>
-                    <h6>Participants (PAX)</h6>
-                    <span
-                      style={{
-                        fontStyle: "italic",
-                        paddingBottom: "5px",
-                        fontSize: "15px",
-                      }}
-                    >
-                      The experience will only be bookable if minimum
-                      participants is met.
-                    </span>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "15px",
-                        paddingTop: "5px",
-                      }}
-                    >
-                      <div style={{ width: "20%" }}>
-                        <TextField
-                          size="small"
-                          id="outlined-number"
-                          type="number"
-                          value={values.participant?.minimum || 0}
-                          onChange={(e) =>
-                            setFieldValue("participant.minimum", e.target.value)
-                          }
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-                      </div>
-                      <div>minimum</div>
-                      <div style={{ width: "20%" }}>
-                        <TextField
-                          size="small"
-                          id="outlined-number"
-                          type="number"
-                          value={values.participant?.maximum}
-                          onChange={(e) =>
-                            setFieldValue("participant.maximum", e.target.value)
-                          }
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-                      </div>
-                      <div>maximum</div>
-                    </div>
-                    {/*display start Time checkBox*/}
-                    <div>
-                      <h6>Select all start times</h6>
-
-                      <FieldArray name="start_time">
-                        {({ form, push, remove }) => (
-                          <>
-                            {startTime.map((time, index) => (
-                              <div key={index}>
-                                <Field
-                                  type="checkbox"
-                                  name={`start_time.${index}`}
-                                  onChange={(e) => {
-                                    const isChecked = e.target.checked;
-                                    const timeId = time._id;
-                                    const startTimes = values.start_time || [];
-                                    console.log(startTimes, "startTimes");
-                                    if (
-                                      isChecked &&
-                                      !startTimes.includes(timeId)
-                                    ) {
-                                      setFieldValue("start_time", [
-                                        ...startTimes,
-                                        timeId,
-                                      ]);
-                                    } else if (
-                                      !isChecked &&
-                                      startTimes.includes(timeId)
-                                    ) {
-                                      setFieldValue(
-                                        "start_time",
-                                        startTimes.filter((id) => id !== timeId)
-                                      );
-                                    }
-                                  }}
-                                  checked={
-                                    values.start_time
-                                      ? values.start_time.includes(time._id)
-                                      : false
-                                  }
-                                />
-                                {time.start_time}
-                              </div>
-                            ))}
-                          </>
-                        )}
-                      </FieldArray>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleClose}
-                  variant="outlined"
-                  color="primary"
-                  className="btn btn-primary"
-                  style={{ marginRight: "10px" }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  className="btn btn-primary"
-                  type="submit"
-                >
-                  Submit
-                </Button>
-              </Form>
-            )}
-          </Formik>
-        );
-      default:
-        return null;
-    }
-  };
-  const renderSwitchFormBlackOut = () => {
-    switch (selectedCategory) {
-      case "happen beatween selected dates":
-        return (
-          <Formik
-            initialValues={{
-              startDate: null,
-              endDate: null,
-              participant: { minimum: 0, maximum: 100 },
-            }}
-            validationSchema={Yup.object({
-              startDate: Yup.date().required("Start date is required"),
-              endDate: Yup.date()
-                .min(Yup.ref("startDate"), "End date must be after start date")
-                .required("End date is required"),
-            })}
-            onSubmit={(values, { setSubmitting }) => {
-              console.log(values);
-              if (!values.start_time) {
-                values.start_time = startTime[0]._id;
-              }
-              subMitingData(values, RecurringTypes.BETWEEN_TWO_DATES);
-              setSubmitting(false);
-            }}
-          >
-            {({ values, setFieldValue }) => (
-              <Form style={{ padding: "25px" }}>
-                <h6>Affected dates</h6>
-                <span
-                  style={{
-                    fontStyle: "italic",
-                  }}
-                >
-                  Select which dates this availability rule applies to.
-                </span>
-                <div
-                  style={{
-                    display: "flex",
-                  }}
-                >
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DemoContainer components={["DatePicker"]}>
-                      <DatePicker
-                        label="Start date"
-                        onChange={(newValue) => {
-                          setFieldValue("startDate", newValue);
-                        }}
-                        renderInput={(params) => (
-                          <TextField>{params.inputProps.value}</TextField>
-                        )}
-                        value={values.startDate || ""}
-                      />
-                    </DemoContainer>
-                  </LocalizationProvider>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DemoContainer components={["DatePicker"]}>
-                      <DatePicker
-                        label="End date"
-                        onChange={(newValue) => {
-                          setFieldValue("endDate", newValue);
-                        }}
-                        renderInput={(params) => (
-                          <TextField>{params.inputProps.value}</TextField>
-                        )}
-                        value={values.endDate || null}
-                      />
-                    </DemoContainer>
-                  </LocalizationProvider>
-                </div>
-                <div>
-                  <h6>Participants (PAX)</h6>
-                  <span
-                    style={{
-                      fontStyle: "italic",
-                      paddingBottom: "5px",
-                      fontSize: "15px",
-                    }}
-                  >
-                    The experience will only be bookable if minimum participants
-                    are met.
-                  </span>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "15px",
-                      paddingTop: "5px",
-                    }}
-                  >
-                    <div style={{ width: "20%" }}>
-                      <Field name="participant.minimum">
-                        {({ field }) => (
-                          <TextField
-                            size="small"
-                            id="outlined-number"
-                            type="number"
-                            {...field}
-                            InputLabelProps={{
-                              shrink: true,
-                            }}
-                            onChange={(e) => {
-                              if (e.target.value > values.participant.maximum) {
-                                setFieldValue(
-                                  "participant.maximum",
-                                  e.target.value
-                                );
-                              }
-                            }}
-                            value={values.participant?.minimum || 0}
-                          />
-                        )}
-                      </Field>
-                    </div>
-                    <div>minimum</div>
-                    <div style={{ width: "20%" }}>
-                      <Field name="participant.maximum">
-                        {({ field }) => (
-                          <TextField
-                            size="small"
-                            id="outlined-number"
-                            type="number"
-                            {...field}
-                            InputLabelProps={{
-                              shrink: true,
-                            }}
-                            onChange={(e) => {
-                              if (
-                                e.target.value < values?.participant?.minimum
-                              ) {
-                                setFieldValue(
-                                  "participant.minimum",
-                                  e.target.value
-                                );
-                              }
-                            }}
-                            value={values?.participant?.maximum || 100}
-                          />
-                        )}
-                      </Field>
-                    </div>
-                    <div>maximum</div>
-                  </div>
-
-                  <div style={{ paddingTop: "20px" }}>
-                    <h6>Select all start times</h6>
-                    <span
-                      style={{
-                        fontStyle: "italic",
-                        paddingBottom: "5px",
-                        fontSize: "15px",
-                      }}
-                    >
-                      {" "}
-                      Select all start times{" "}
-                    </span>
-                    <FieldArray name="start_time">
-                      {({ form, push, remove }) => (
-                        <>
-                          {startTime.map((time, index) => (
-                            <div key={index}>
-                              <Field
-                                type="checkbox"
-                                name={`start_time.${index}`}
-                                onChange={(e) => {
-                                  const isChecked = e.target.checked;
-                                  const timeId = time._id;
-                                  const startTimes = values.start_time || [];
-                                  console.log(startTimes, "startTimes");
-                                  if (
-                                    isChecked &&
-                                    !startTimes.includes(timeId)
-                                  ) {
-                                    setFieldValue("start_time", [
-                                      ...startTimes,
-                                      timeId,
-                                    ]);
-                                  } else if (
-                                    !isChecked &&
-                                    startTimes.includes(timeId)
-                                  ) {
-                                    setFieldValue(
-                                      "start_time",
-                                      startTimes.filter((id) => id !== timeId)
-                                    );
-                                  }
-                                }}
-                                checked={
-                                  values.start_time
-                                    ? values.start_time.includes(time._id)
-                                    : false
-                                }
-                              />
-                              {time.start_time}
-                            </div>
-                          ))}
-                        </>
-                      )}
-                    </FieldArray>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleCloseBlack}
-                  variant="outlined"
-                  color="primary"
-                  className="btn btn-primary"
-                  style={{ marginRight: "10px" }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  className="btn btn-primary"
-                  type="submit"
-                >
-                  Submit
-                </Button>{" "}
-              </Form>
-            )}
-          </Formik>
-        );
-      case "happen on a selected date":
-        return (
-          <Formik
-            initialValues={{ selectedDate: selectedDate }}
-            validationSchema={Yup.object({
-              selectedDate: Yup.date().required("Date is required"),
-            })}
-            onSubmit={(values, { setSubmitting }) => {
-              setSubmitting(false);
-              if (!values.start_time) {
-                values.start_time = startTime[0]._id;
-              }
-              subMitingData(values, RecurringTypes.SPECIFIC_DATE);
-            }}
-          >
-            {({ values, setFieldValue }) => (
-              <Form style={{ padding: "25px" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DemoContainer components={["DatePicker"]}>
-                      <DatePicker
-                        name="selectedDate"
-                        value={dayjs(selectedDate)}
-                        onChange={(date) => {
-                          setFieldValue("selectedDate", date);
-                          setSelectedDate(date);
-                        }}
-                        // slotProps={{ textField: { size: "small" } }}
-                      />
-                    </DemoContainer>
-                  </LocalizationProvider>
-                  <FormGroup>
-                    {/* <FormControlLabel
-                      control={<Switch />}
-                      label="Switch"
-                      name="switch"
-                      onChange={(e) => setIsEventAllTime(e.target.checked)}
-                      checked={isEventAllTime}
-                      // Handle switch state here if needed
-                    /> */}
-                  </FormGroup>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "40px",
-                  }}
-                >
-                  <div>
-                    <h6>Participants (PAX)</h6>
-                    <span
-                      style={{
-                        fontStyle: "italic",
-                        paddingBottom: "5px",
-                        fontSize: "15px",
-                      }}
-                    >
-                      The experience will only be bookable if minimum
-                      participants is met.
-                    </span>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "15px",
-                        paddingTop: "5px",
-                      }}
-                    >
-                      <div style={{ width: "20%" }}>
-                        <TextField
-                          size="small"
-                          id="outlined-number"
-                          type="number"
-                          value={values.participant?.minimum || 0}
-                          onChange={(e) =>
-                            setFieldValue("participant.minimum", e.target.value)
-                          }
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-                      </div>
-                      <div>minimum</div>
-                      <div style={{ width: "20%" }}>
-                        <TextField
-                          size="small"
-                          id="outlined-number"
-                          type="number"
-                          value={values.participant?.maximum}
-                          onChange={(e) =>
-                            setFieldValue("participant.maximum", e.target.value)
-                          }
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-                      </div>
-                      <div>maximum</div>
-                    </div>
-                    {/*display start Time checkBox*/}
-                    <div>
-                      <h6>Select all start times</h6>
-
-                      <FieldArray name="start_time">
-                        {({ form, push, remove }) => (
-                          <>
-                            {startTime.map((time, index) => (
-                              <div key={index}>
-                                <Field
-                                  type="checkbox"
-                                  name={`start_time.${index}`}
-                                  onChange={(e) => {
-                                    const isChecked = e.target.checked;
-                                    const timeId = time._id;
-                                    const startTimes = values.start_time || [];
-                                    console.log(startTimes, "startTimes");
-                                    if (
-                                      isChecked &&
-                                      !startTimes.includes(timeId)
-                                    ) {
-                                      setFieldValue("start_time", [
-                                        ...startTimes,
-                                        timeId,
-                                      ]);
-                                    } else if (
-                                      !isChecked &&
-                                      startTimes.includes(timeId)
-                                    ) {
-                                      setFieldValue(
-                                        "start_time",
-                                        startTimes.filter((id) => id !== timeId)
-                                      );
-                                    }
-                                  }}
-                                  checked={
-                                    values.start_time
-                                      ? values.start_time.includes(time._id)
-                                      : false
-                                  }
-                                />
-                                {time.start_time}
-                              </div>
-                            ))}
-                          </>
-                        )}
-                      </FieldArray>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleCloseBlack}
-                  variant="outlined"
-                  color="primary"
-                  className="btn btn-primary"
-                  style={{ marginRight: "10px" }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  className="btn btn-primary"
-                  type="submit"
-                >
-                  Submit
-                </Button>
-              </Form>
-            )}
-          </Formik>
-        );
-      default:
-        return null;
-    }
+  const renderEventContent = (eventInfo) => {
+    const isBlackout = eventInfo.event.extendedProps?.isBlackout;
+    const participant = eventInfo.event.extendedProps?.participant;
+    
+    return (
+      <Box sx={{ 
+        p: 0.5, 
+        backgroundColor: isBlackout ? '#ffebee' : '#e8f5e8',
+        borderRadius: 1,
+        border: `1px solid ${isBlackout ? '#ffcdd2' : '#c8e6c9'}`
+      }}>
+        <Typography variant="caption" display="block" fontWeight="bold" color={isBlackout ? '#d32f2f' : '#2e7d32'}>
+          {eventInfo.timeText}
+        </Typography>
+        <Typography variant="caption" display="block" color={isBlackout ? '#d32f2f' : '#2e7d32'}>
+          {isBlackout ? '🚫 Blackout' : `👥 ${participant?.minimum || 1}-${participant?.maximum || 20} guests`}
+        </Typography>
+      </Box>
+    );
   };
 
   return (
-    <div className="demo-app">
-      <div className="demo-app-main">
-        <Button onClick={handleOpen} variant="outlined">
-          open
-        </Button>
-        <Button onClick={handleBlackout} style={{color: "black"}}>
-          Blackout
-        </Button>
-        <FullCalendar
-          plugins={[
-            dayGridPlugin,
-            timeGridPlugin,
-            interactionPlugin,
-            rrulePlugin,
-          ]}
-          headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay",
-          }}
-          initialView="dayGridMonth"
-          editable={true}
-          selectable={true}
-          selectMirror={true}
-          dayMaxEvents={true}
-          eventDisplay="block"
-          weekends={weekendsVisible}
-          events={currentEvents}
-          select={handleDateSelect}
-          eventContent={renderEventContent}
-          eventClick={handleEventClick}
-          // eventsSet={handleEvents}
-          eventAdd={handleEventAdd}
-        />
-        <div>
-          <Modal
-            open={open}
-            onClose={handleClose}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-            sx={{ overflowY: "scroll" }}
-          >
-            <Box sx={style}>
-              <div style={{ borderBottom: "1px solid", padding: "10px" }}>
-                <Typography id="modal-modal-title" variant="h6" component="h2">
-                  Add availability
-                </Typography>
-              </div>
-              <div style={{ marginTop: "10px" }}>
-                <div style={{ padding: "25px" }}>
-                  <h6>Select the type of availability rule</h6>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <div>This rule should</div>
-                    <div style={{ width: "30%" }}>
-                      <Autocomplete
-                        disablePortal
-                        id="combo-box-demo"
-                        options={categories}
-                        onChange={handleCategoryChange}
-                        value={selectedCategory}
-                        size="small"
-                        renderInput={(params) => <TextField {...params} />}
-                      />
-                    </div>
-                  </div>
-                </div>
+    <CalendarContainer elevation={2}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+        <Typography variant="h4" fontWeight="bold">
+          Experience Calendar
+        </Typography>
+        <Stack direction="row" spacing={2}>
+          <Tooltip title="Add Available Time">
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenModal('availability')}
+            >
+              Add Availability
+            </Button>
+          </Tooltip>
+          <Tooltip title="Set Blackout Dates">
+            <Button
+              variant="outlined"
+              startIcon={<BlockIcon />}
+              onClick={() => handleOpenModal('blackout')}
+            >
+              Set Blackout
+            </Button>
+          </Tooltip>
+        </Stack>
+      </Stack>
 
-                <div style={{ padding: "25px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <>{renderSwitchForm()}</>
-                    {/* <FormGroup>
-                      <FormControlLabel control={<Switch />} />
-                    </FormGroup> */}
-                    <FormGroup>
-                      <FormControlLabel
-                        control={
-                          <RadioGroup
-                            onChange={(e) => {
-                              setCurrentStartTime(e.target.value);
-                            }}
-                            value={currentSelectedStartTime}
-                          >
-                            {startTime && startTime.length > 0
-                              ? startTime.map((item, index) => (
-                                  <Radio key={index} value={item} />
-                                ))
-                              : null}
-                          </RadioGroup>
-                        }
-                      />
-                    </FormGroup>
-                  </div>
-                </div>
-              </div>
-            </Box>
-          </Modal>
-          <Modal
-            open={blackOut}
-            onClose={handleClose}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-            sx={{ overflowY: "scroll" }}
-          >
-            <Box sx={style}>
-              <div style={{ borderBottom: "1px solid", padding: "10px" }}>
-                <Typography id="modal-modal-title" variant="h6" component="h2">
-                  Set Blackout
-                </Typography>
-              </div>
-              <div style={{ marginTop: "10px" }}>
-                <div style={{ padding: "25px" }}>
-                  <h6>Select the type of Blackout rule:</h6>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <div>This rule should</div>
-                    <div style={{ width: "30%" }}>
-                      <Autocomplete
-                        disablePortal
-                        id="combo-box-demo"
-                        options={categoriesBlackout}
-                        onChange={handleBlackoutChange}
-                        value={selectedBlackout}
-                        size="small"
-                        renderInput={(params) => <TextField {...params} />}
-                      />
-                    </div>
-                  </div>
-                </div>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <EventIcon color="primary" />
+                <Box>
+                  <Typography color="textSecondary" gutterBottom variant="overline">
+                    Total Events
+                  </Typography>
+                  <Typography variant="h5">{currentEvents.length}</Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <ScheduleIcon color="secondary" />
+                <Box>
+                  <Typography color="textSecondary" gutterBottom variant="overline">
+                    Start Times
+                  </Typography>
+                  <Typography variant="h5">{startTime.length}</Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-                <div style={{ padding: "25px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <>{renderSwitchFormBlackOut()}</>
-                    {/* <FormGroup>
-                      <FormControlLabel control={<Switch />} />
-                    </FormGroup> */}
-                    <FormGroup>
-                      <FormControlLabel
-                        control={
-                          <RadioGroup
-                            onChange={(e) => {
-                              setCurrentStartTime(e.target.value);
-                            }}
-                            value={currentSelectedStartTime}
-                          >
-                            {startTime && startTime.length > 0
-                              ? startTime.map((item, index) => (
-                                  <Radio key={index} value={item} />
-                                ))
-                              : null}
-                          </RadioGroup>
-                        }
-                      />
-                    </FormGroup>
-                  </div>
-                </div>
-              </div>
-            </Box>
-          </Modal>
-          <Modal
-            open={deleteEventModal}
-            onClose={() => setDeleteEventModal(false)}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-            sx={{ overflowY: "scroll" }}
-          >
-            <Box sx={style}>
-              <div>
-                <div style={{ padding: "25px" }}>
-                  <h6>Are you sure you want to delete this event?</h6>
-                </div>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Button
-                    onClick={() => setDeleteEventModal(false)}
-                    variant="outlined"
-                  >
-                    Back
-                  </Button>
-                  <Button variant="contained" onClick={deleteEvent}>
-                    Continue
-                  </Button>
-                </div>
-              </div>
-            </Box>
-          </Modal>
-        </div>
-        <Button onClick={handleOnFormSubmit}>Countinue </Button>
-      </div>
-    </div>
+      <Card>
+        <CardContent>
+          <FullCalendar
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, rrulePlugin]}
+            headerToolbar={{
+              left: "prev,next today",
+              center: "title",
+              right: "dayGridMonth,timeGridWeek,timeGridDay",
+            }}
+            initialView="dayGridMonth"
+            editable={true}
+            selectable={true}
+            selectMirror={true}
+            dayMaxEvents={3}
+            eventDisplay="block"
+            weekends={true}
+            events={currentEvents}
+            select={handleDateSelect}
+            eventClick={handleEventClick}
+            eventContent={renderEventContent}
+            height="650px"
+          />
+        </CardContent>
+      </Card>
+
+      <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
+        <Button variant="outlined" onClick={() => navigate(-1)}>
+          Back
+        </Button>
+        <Button 
+          variant="contained" 
+          onClick={() => navigate("/pricingCategories")}
+          disabled={currentEvents.length === 0}
+        >
+          Continue to Pricing
+        </Button>
+      </Stack>
+
+      <AvailabilityForm 
+        type="availability" 
+        open={openModal === 'availability'} 
+        onClose={handleCloseModal}
+        startTime={startTime}
+        selectedDate={selectedDate}
+        onSubmit={handleSubmitEvent}
+        loading={loading}
+      />
+      <AvailabilityForm 
+        type="blackout" 
+        open={openModal === 'blackout'} 
+        onClose={handleCloseModal}
+        startTime={startTime}
+        selectedDate={selectedDate}
+        onSubmit={handleSubmitEvent}
+        loading={loading}
+      />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </CalendarContainer>
   );
 };
 
 export default Calendar;
-const categories = [
-  "Repeat weekly on selected days",
-  "Repeat yearly during selected months",
-  "happen beatween selected dates",
-  "happen on a selected date",
-];
-const categoriesBlackout = [
-  "Happen between selected dates",
-  "Happen on a selected date",
-];

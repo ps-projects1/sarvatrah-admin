@@ -17,6 +17,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
+
 function createData(id, time, duration, linkedRates, buttons) {
   return { id, time, duration, linkedRates, buttons };
 }
@@ -43,29 +45,41 @@ const StartTime = () => {
   const [experienceId] = useState(localID ? localID : null);
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    setOpen(false);
+    setFormData({
+      time: "",
+      duration: "00:00",
+      internalLabel: "",
+      externalLabel: "",
+      linkedRates: "",
+    });
+    setEditingId(-1);
+  };
+  
   const [formData, setFormData] = useState({
     time: "",
-    duration: "",
+    duration: "00:00", // Initialize with default value
     internalLabel: "",
     externalLabel: "",
     linkedRates: "",
   });
+  
   const [totalData, setTotalData] = useState(1);
   const [editingId, setEditingId] = useState(-1);
   const timePickerRef = useRef(null);
 
-  //"2825752", "12:00 PM", "1 hour", "Standard rate", "Edit/Delete"
   const [rows, setRows] = useState([]);
+  
   const goBack = () => {
     navigate("/capacity");
   };
+  
   useEffect(() => {
     if (experienceId && experienceId.length > 0) {
       (async () => {
         const response = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`
-,
+          `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
           {
             method: "GET",
             headers: {
@@ -85,23 +99,45 @@ const StartTime = () => {
       })();
       return;
     }
-
-
   }, [experienceId]);
+
+  // Safe duration split function
+  const getDurationParts = (duration) => {
+    if (!duration || typeof duration !== 'string') {
+      return ["00", "00"];
+    }
+    const parts = duration.split(':');
+    return [
+      parts[0] || "00",
+      parts[1] || "00"
+    ];
+  };
+
   const createStartTime = async () => {
+    if (!formData.time) {
+      alert("Please select a start time");
+      return;
+    }
+
     if (editingId !== -1) {
-      rows[editingId] = {
-        id: rows[editingId].id,
-        time: formData.time,
-        duration: formData.duration,
-        linkedRates: formData.linkedRates,
-        buttons: "Edit/Delete",
-      };
+      // Find the actual index in rows array
+      const rowIndex = rows.findIndex(row => row.id === editingId);
+      if (rowIndex !== -1) {
+        const updatedRows = [...rows];
+        updatedRows[rowIndex] = {
+          ...updatedRows[rowIndex],
+          time: formData.time,
+          duration: formData.duration,
+          linkedRates: formData.linkedRates,
+          internalLabel: formData.internalLabel,
+          externalLabel: formData.externalLabel,
+        };
+        setRows(updatedRows);
+      }
       setEditingId(-1);
-      setRows([...rows]);
       setFormData({
         time: "",
-        duration: "",
+        duration: "00:00",
         internalLabel: "",
         externalLabel: "",
         linkedRates: "",
@@ -109,45 +145,55 @@ const StartTime = () => {
       handleClose();
       return;
     }
-    setTotalData((prev) => prev + 1);
-    createData(
-      totalData,
-      formData.time,
-      formData.duration,
-      formData.linkedRates,
-      "Edit/Delete"
-    );
-    setRows((rows) => [
-      ...rows,
-      {
-        id: totalData,
-        time: formData.time,
-        duration: formData.duration,
-        linkedRates: formData.linkedRates,
-        internalLabel: formData.internalLabel,
-        externalLabel: formData.externalLabel,
-      },
-    ]);
+
+    const newId = totalData + 1;
+    const newRow = {
+      id: newId,
+      time: formData.time,
+      duration: formData.duration,
+      linkedRates: formData.linkedRates,
+      internalLabel: formData.internalLabel,
+      externalLabel: formData.externalLabel,
+    };
+
+    setRows(prevRows => [...prevRows, newRow]);
+    setTotalData(newId);
+    
+    setFormData({
+      time: "",
+      duration: "00:00",
+      internalLabel: "",
+      externalLabel: "",
+      linkedRates: "",
+    });
     handleClose();
   };
+
   const handleDelete = (id) => {
     setRows((rows) => rows.filter((row) => row.id !== id));
-    setTotalData((prev) => prev - 1);
   };
+
   const handleEdit = (id) => {
-    setFormData({
-      time: rows[id]?.time,
-      duration: rows[id]?.duration,
-      linkedRates: rows[id]?.linkedRates,
-    });
-    handleOpen();
+    const rowToEdit = rows.find(row => row.id === id);
+    if (rowToEdit) {
+      setFormData({
+        time: rowToEdit.time || "",
+        duration: rowToEdit.duration || "00:00",
+        linkedRates: rowToEdit.linkedRates || "",
+        internalLabel: rowToEdit.internalLabel || "",
+        externalLabel: rowToEdit.externalLabel || "",
+      });
+      setEditingId(id);
+      handleOpen();
+    }
   };
+
   const submit = async () => {
     if (rows.length === 0) {
       alert("Please add start time");
       return;
     }
-    console.log(rows);
+    
     const updatedRows = rows.map((row) => {
       return {
         start_time: row.time,
@@ -157,32 +203,40 @@ const StartTime = () => {
         product_code: row.linkedRates,
       };
     });
+    
     const data = {
       availability_detail: [...updatedRows],
     };
-    const response = await fetch(
-`${process.env.REACT_APP_API_BASE_URL}/experience/updateTiming/${experienceId}`
-,      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/experience/updateTiming/${experienceId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
+      const data2 = await response.json();
+      navigate("/calendar", {
+        state: {
+          ...data2,
         },
-        body: JSON.stringify(data),
-      }
-    );
-    const data2 = await response.json();
-    navigate("/calendar", {
-      state: {
-        ...data2,
-      },
-    });
+      });
+    } catch (error) {
+      console.error("Error submitting start times:", error);
+      alert("Error submitting start times");
+    }
   };
+
   const onKeyDown = (e) => {
-    // Prevent keyboard input in the TimePicker
     if (timePickerRef.current?.contains(e.target)) {
       e.preventDefault();
     }
   };
+
   return (
     <>
       <Modal
@@ -195,7 +249,7 @@ const StartTime = () => {
         <Box sx={style}>
           <div style={{ borderBottom: "1px solid", padding: "10px" }}>
             <Typography id="modal-modal-title" variant="h6" component="h2">
-              Add start time
+              {editingId !== -1 ? "Edit start time" : "Add start time"}
             </Typography>
           </div>
           <div style={{ marginTop: "10px" }}>
@@ -205,9 +259,8 @@ const StartTime = () => {
                 <DemoContainer components={["TimePicker"]}>
                   <TimePicker
                     inputReadOnly
+                    value={formData.time ? dayjs(`2023-01-01 ${formData.time}`) : null}
                     onChange={(e) => {
-                      console.log("time");
-                      console.log(e?.format("HH:mm"));
                       setFormData({ ...formData, time: e?.format("HH:mm") });
                     }}
                     size="small"
@@ -224,21 +277,24 @@ const StartTime = () => {
                   <TextField
                     style={{ width: "100px", paddingRight: "10px" }}
                     id="outlined-number"
-                    // label="Hours"
                     type="number"
                     size="small"
+                    value={getDurationParts(formData.duration)[0]}
                     onChange={(e) => {
+                      const hours = e.target.value.padStart(2, '0');
+                      const minutes = getDurationParts(formData.duration)[1];
                       setFormData({
                         ...formData,
-                        duration: `${e.target.value}:${
-                          formData.duration.split(":")[1]
-                            ? formData.duration.split(":")[1]
-                            : "00"
-                        }`,
+                        duration: `${hours}:${minutes}`,
                       });
                     }}
                     InputLabelProps={{
                       shrink: true,
+                    }}
+                    inputProps={{ 
+                      min: 0, 
+                      max: 23,
+                      style: { textAlign: 'center' }
                     }}
                   />
                   <div style={{ fontStyle: "italic" }}>Hours</div>
@@ -247,21 +303,24 @@ const StartTime = () => {
                   <TextField
                     style={{ width: "100px", paddingRight: "10px" }}
                     id="outlined-number"
-                    // label="Minutes"
                     type="number"
                     size="small"
+                    value={getDurationParts(formData.duration)[1]}
                     onChange={(e) => {
+                      const minutes = e.target.value.padStart(2, '0');
+                      const hours = getDurationParts(formData.duration)[0];
                       setFormData({
                         ...formData,
-                        duration: `${
-                          formData.duration.split(":")[0]
-                            ? formData.duration.split(":")[0]
-                            : "00"
-                        }:${e.target.value}`,
+                        duration: `${hours}:${minutes}`,
                       });
                     }}
                     InputLabelProps={{
                       shrink: true,
+                    }}
+                    inputProps={{ 
+                      min: 0, 
+                      max: 59,
+                      style: { textAlign: 'center' }
                     }}
                   />
                   <div style={{ fontStyle: "italic" }}>Minutes</div>
@@ -286,6 +345,7 @@ const StartTime = () => {
                 id="outlined-basic"
                 variant="outlined"
                 size="small"
+                value={formData.internalLabel}
                 onChange={(e) => {
                   setFormData({ ...formData, internalLabel: e.target.value });
                 }}
@@ -300,15 +360,14 @@ const StartTime = () => {
                   fontSize: "12px",
                 }}
               >
-                This internal label can be helpful when you have multiple start
-                times at the same time. Only your company will be able to see
-                this
+                This external label will be visible to customers when they book your experience
               </span>
               <TextField
                 fullWidth
                 id="outlined-basic"
                 variant="outlined"
                 size="small"
+                value={formData.externalLabel}
                 onChange={(e) => {
                   setFormData({ ...formData, externalLabel: e.target.value });
                 }}
@@ -316,12 +375,12 @@ const StartTime = () => {
             </div>
             <div style={{ padding: "10px" }}>
               <h6>Product code</h6>
-              {/* <span style={{ fontStyle: 'italic', paddingBottom: '5px', fontSize: '15px' }}>This internal label can be helpful when you have multiple start times at the same time. Only your company will be able to see this</span> */}
               <TextField
                 fullWidth
                 id="outlined-basic"
                 variant="outlined"
                 size="small"
+                value={formData.linkedRates}
                 onChange={(e) => {
                   setFormData({ ...formData, linkedRates: e.target.value });
                 }}
@@ -339,7 +398,7 @@ const StartTime = () => {
               Back
             </Button>
             <Button variant="contained" onClick={createStartTime}>
-              Continue
+              {editingId !== -1 ? "Update" : "Continue"}
             </Button>
           </div>
         </Box>
@@ -390,36 +449,42 @@ const StartTime = () => {
                     Duration
                   </TableCell>
                   <TableCell sx={{ width: "30px" }} align="center">
-                    Linked Rates
+                    Internal Label
+                  </TableCell>
+                  <TableCell sx={{ width: "30px" }} align="center">
+                    External Label
+                  </TableCell>
+                  <TableCell sx={{ width: "30px" }} align="center">
+                    Product Code
                   </TableCell>
                   <TableCell sx={{ width: "30px" }} align="center"></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    // sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                  >
+                  <TableRow key={row.id}>
                     <TableCell component="th" scope="row">
                       {row.id}
                     </TableCell>
                     <TableCell align="center">{row.time}</TableCell>
                     <TableCell align="center">{row.duration}</TableCell>
+                    <TableCell align="center">{row.internalLabel}</TableCell>
+                    <TableCell align="center">{row.externalLabel}</TableCell>
                     <TableCell align="center">{row.linkedRates}</TableCell>
                     <TableCell align="center">
                       <Button
                         onClick={() => {
                           handleDelete(row.id);
                         }}
+                        color="error"
                       >
                         Delete
                       </Button>
                       <Button
                         onClick={() => {
-                          setEditingId(row.id);
                           handleEdit(row.id);
                         }}
+                        color="primary"
                       >
                         Edit
                       </Button>

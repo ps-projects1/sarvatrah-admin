@@ -21,6 +21,7 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import StoreIcon from "@mui/icons-material/Store";
 import CopyrightIcon from "@mui/icons-material/Copyright";
+import SportsMartialArtsIcon from "@mui/icons-material/SportsMartialArts";
 
 export const MENU_ITEMS = [
   { path: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
@@ -31,6 +32,8 @@ export const MENU_ITEMS = [
   { path: "addAdvanture", label: "Adventures", icon: <HikingIcon /> },
   { path: "holiday-packages", label: "Packages", icon: <CardTravelIcon /> },
   { path: "policy", label: "Policies", icon: <PolicyIcon /> },
+  { path: "addactivity", label: "Add Activity", icon: <SportsMartialArtsIcon /> },
+
   { path: "manageDriver", label: "Drivers", icon: <PeopleIcon /> },
   { path: "manageOffer", label: "Offers", icon: <LocalOfferIcon /> },
   {

@@ -104,7 +104,8 @@ const TimeDatePass = () => {
         <FormControl style={{ width: "100%" }}>
           <RadioGroup
             aria-labelledby="demo-radio-buttons-group-label"
-            defaultValue="female"
+            defaultValue={type}
+
             name="radio-buttons-group"
             onChange={(e) => setType(e.target.value)}
             value={type}
@@ -121,8 +122,9 @@ const TimeDatePass = () => {
               }}
             >
               <FormControlLabel
-                value="dateTime"
-                control={<Radio onChange={() => setType("date_time")} />}
+            value="date_time"
+control={<Radio onChange={() => setType("date_time")} />}
+
               />
               <div>
                 <h5>Date and Time</h5>
