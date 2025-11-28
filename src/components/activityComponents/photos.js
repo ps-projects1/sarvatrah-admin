@@ -10,8 +10,8 @@ const Photos = () => {
   const [experienceId] = useState(localId ? localId : "");
   const [photos, setPhotos] = useState([]);
   const [photoFile, setPhotoFile] = useState([]);
-
   const [showBackdrop, setShowBackDrop] = useState(null);
+  
   useEffect(() => {
     if (experienceId) {
       (async function () {
@@ -35,9 +35,10 @@ const Photos = () => {
     }
     if (!experienceId) {
       alert("please add titel and categories");
-      navigate("/titel");
+      navigate("/activity/titel"); // Updated path
     }
   }, [experienceId,navigate]);
+  
   const submit = async () => {
     if (photos.length === 0) {
       alert("please add photos");
@@ -65,7 +66,7 @@ const Photos = () => {
         return;
       }
   
-      navigate("/videos", {
+      navigate("/activity/videos", { // Updated path
         state: {
           ...responseJson,
         },
@@ -76,7 +77,7 @@ const Photos = () => {
   };
   
   const goBack = () => {
-    navigate("/exclusions");
+    navigate("/activity/exclusions"); // Updated path
   };
   
 
@@ -167,12 +168,9 @@ const Photos = () => {
             boxShadow: "none",
             justifyContet: "center",
           }}
-          // onDrop={handleDrop}
-          // onDragOver={preventDefault}
         >
           <input
             type="file"
-            // onChange={handleFileChange}
             style={{ display: "none" }}
             id="file-upload-input"
             accept="image/*"
@@ -193,9 +191,7 @@ const Photos = () => {
           >
             <h4>Drag photos here to upload</h4>
             <span>Supported file types are: .png, .jpg, .jpeg</span>
-            {/* <span>Maximum file size is 17 MB</span> */}
             <IconButton component="span" size="large">
-              {/* <Image src={FileUploadIcon} alt="Image" /> */}
               <CloudUploadIcon /> Browse Your Computer
             </IconButton>
           </label>
@@ -236,7 +232,6 @@ const Photos = () => {
                         sx={{ color: "white", cursor: "pointer" }}
                         onClick={() => deletePhoto(index)}
                       />
-                      {/* <EditIcon sx={{ color: "white", cursor: "pointer" }} /> */}
                     </div>
                   )}
                   <img

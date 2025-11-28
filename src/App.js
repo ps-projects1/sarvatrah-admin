@@ -1,4 +1,4 @@
-import { Route, Routes, Outlet } from "react-router-dom";
+import { Route, Routes, Outlet, Navigate } from "react-router-dom";
 import Layout from "./layouts/Layout";
 import ActivityLayout from "./layouts/ActivityLayout";
 import React from "react";
@@ -87,8 +87,11 @@ const Calender = React.lazy(() =>
   import("./components/activityComponents/Calender")
 );
 
-// Route configuration
-const routes = [
+// Create a default component for activity index
+const ActivityDefault = React.lazy(() => import("./components/activityComponents/ActivityDefault"));
+
+// Main routes configuration
+const mainRoutes = [
   { path: "/dashboard", element: <Dashboard /> },
   { path: "/hotel", element: <Hotel /> },
   { path: "/city", element: <City /> },
@@ -103,52 +106,30 @@ const routes = [
   { path: "/manageVendor", element: <ManageVendor /> },
   { path: "/manageFooter", element: <ManageFooter /> },
   { path: "/addactivity", element: <AddActivity /> },
-  { path: "/titel", element: <Titel /> },
-  { path: "/duration", element: <Duration /> },
-  { path: "/categories", element: <Categories /> },
-  { path: "/location", element: <Location /> },
-  { path: "/description", element: <Description /> },
-  { path: "/photos", element: <Photos /> },
-  { path: "/videos", element: <Videos /> },
-  { path: "/inclusions", element: <Inclusions /> },
-  { path: "/exclusions", element: <Exclusions /> },
-  { path: "/timeDatePass", element: <TimeDatePass /> },
-  { path: "/openingHours", element: <OpeningHours /> },
-  { path: "/bookingCutoff", element: <BookingCutoff /> },
-  { path: "/capacity", element: <Capacity /> },
-  { path: "/startTime", element: <StartTime /> },
-  { path: "/pricingCategories", element: <PricingCategories /> },
-  { path: "/rates", element: <Rates /> },
-  { path: "/pricing", element: <Pricing /> },
-  { path: "/meetingPickup", element: <MeetingPickup /> },
-  { path: "/meetingPoint", element: <MeetingPoint /> },
-  { path: "/calendar", element: <Calender /> },
 ];
 
-
+// Activity routes configuration - only define them once
 const activityRoutes = [
-  { path: "/titel", component: Titel },
-  { path: "/duration", component: Duration },
-  { path: "/categories", component: Categories },
-  { path: "/location", component: Location },
-  { path: "/description", component: Description },
-  { path: "/photos", component: Photos },
-  { path: "/videos", component: Videos },
-  { path: "/inclusions", component: Inclusions },
-  { path: "/exclusions", component: Exclusions },
-  { path: "/timeDatePass", component: TimeDatePass },
-  { path: "/openingHours", component: OpeningHours },
-  { path: "/bookingCutoff", component: BookingCutoff },
-  { path: "/capacity", component: Capacity },
-  { path: "/startTime", component: StartTime },
-  { path: "/calendar", component: Calender },
-  { path: "/pricingCategories", component: PricingCategories },
-  { path: "/rates", component: Rates },
-  { path: "/pricing", component: Pricing },
-  { path: "/meetingPickup", component: MeetingPickup },
-  { path: "/meetingPoint", component: MeetingPoint },
-   {  path: "/calendar", component: Calender }, 
-  
+  { path: "titel", element: <Titel /> },
+  { path: "duration", element: <Duration /> },
+  { path: "categories", element: <Categories /> },
+  { path: "location", element: <Location /> },
+  { path: "description", element: <Description /> },
+  { path: "photos", element: <Photos /> },
+  { path: "videos", element: <Videos /> },
+  { path: "inclusions", element: <Inclusions /> },
+  { path: "exclusions", element: <Exclusions /> },
+  { path: "timeDatePass", element: <TimeDatePass /> },
+  { path: "openingHours", element: <OpeningHours /> },
+  { path: "bookingCutoff", element: <BookingCutoff /> },
+  { path: "capacity", element: <Capacity /> },
+  { path: "startTime", element: <StartTime /> },
+  { path: "pricingCategories", element: <PricingCategories /> },
+  { path: "rates", element: <Rates /> },
+  { path: "pricing", element: <Pricing /> },
+  { path: "meetingPickup", element: <MeetingPickup /> },
+  { path: "meetingPoint", element: <MeetingPoint /> },
+  { path: "calendar", element: <Calender /> },
 ];
 
 // Main Layout wrapper for protected routes
@@ -159,15 +140,6 @@ const ProtectedLayout = () => {
         <Outlet />
       </Layout>
     </ProtectedRoute>
-  );
-};
-
-// Activity Layout wrapper
-const ActivityRoutesWrapper = () => {
-  return (
-    <ActivityLayout>
-      <Outlet />
-    </ActivityLayout>
   );
 };
 
@@ -182,7 +154,8 @@ function App() {
 
           {/* Protected routes with Layout */}
           <Route element={<ProtectedLayout />}>
-            {routes.map((route) => (
+            {/* Main routes */}
+            {mainRoutes.map((route) => (
               <Route
                 key={route.path}
                 path={route.path}
@@ -190,16 +163,20 @@ function App() {
               />
             ))}
 
-            {/* Activity routes with nested layout */}
-            <Route element={<ActivityRoutesWrapper />}>
+            {/* Activity nested routes - Use ActivityLayout directly */}
+            <Route path="/activity" element={<ActivityLayout />}>
+              <Route index element={<ActivityDefault />} />
               {activityRoutes.map((route) => (
                 <Route
                   key={route.path}
-                  path={`/activity${route.path}`}
-                  element={<route.component />}
+                  path={route.path}
+                  element={route.element}
                 />
               ))}
             </Route>
+
+            {/* Redirect root to dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Routes>
       </React.Suspense>

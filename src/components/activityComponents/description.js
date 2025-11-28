@@ -40,6 +40,7 @@ const Description = () => {
   const [description, setDescription] = useState("");
   const localId = localStorage.getItem("_id");
   const [experienceId] = useState(localId ? localId : "");
+  
   useEffect(() => {
     if (experienceId && experienceId.length > 0) {
       (async function () {
@@ -64,10 +65,11 @@ const Description = () => {
     }
     if (!experienceId) {
       alert("please add titel and categories");
-      navigate("/titel");
+      navigate("/activity/titel"); // Updated path
       return;
     }
   }, [experienceId, navigate]);
+  
   const submit = async () => {
     if (!shortDescription) {
       alert("Please enter the short description");
@@ -95,14 +97,15 @@ const Description = () => {
       alert(responseJson.message);
       return;
     }
-    navigate("/inclusions", {
+    navigate("/activity/inclusions", { // Updated path
       state: {
         ...responseJson,
       },
     });
   };
+  
   const goBack = () => {
-    navigate("/categories");
+    navigate("/activity/categories"); // Updated path
   };
 
   return (

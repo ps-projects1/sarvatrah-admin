@@ -23,6 +23,7 @@ const LocationDetails = () => {
   const [selectedState, setSelectedState] = useState(null);
   const localId = localStorage.getItem("_id");
   const [experienceId] = useState(localId);
+  
   useEffect(() => {
     if (experienceId) {
       (async function () {
@@ -62,6 +63,7 @@ const LocationDetails = () => {
   const handleStateChange = () => {
     // Optional: handle state change logic here if needed
   };
+  
   const submit = async () => {
     const query = new URLSearchParams({
       location: locationdata,
@@ -91,7 +93,7 @@ const LocationDetails = () => {
       alert(responseJson.message);
       return;
     }
-    navigate("/categories", {
+    navigate("/activity/categories", { // Updated path
       state: {
         ...responseJson,
       },
@@ -99,8 +101,9 @@ const LocationDetails = () => {
   };
 
   const goBack = () => {
-    navigate("/duration");
+    navigate("/activity/duration"); // Updated path
   };
+  
   return (
     <div
       style={{

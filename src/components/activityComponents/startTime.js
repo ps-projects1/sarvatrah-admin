@@ -72,7 +72,7 @@ const StartTime = () => {
   const [rows, setRows] = useState([]);
   
   const goBack = () => {
-    navigate("/capacity");
+    navigate("/activity/capacity");
   };
   
   useEffect(() => {
@@ -220,7 +220,7 @@ const StartTime = () => {
         }
       );
       const data2 = await response.json();
-      navigate("/calendar", {
+      navigate("/activity/calendar", {
         state: {
           ...data2,
         },

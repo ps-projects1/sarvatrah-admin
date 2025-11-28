@@ -11,6 +11,7 @@ const Duration = () => {
     minutes: "",
   });
   const [experienceId] = useState(_id);
+  
   useEffect(() => {
     if (_id) {
       (async function () {
@@ -38,9 +39,10 @@ const Duration = () => {
       })();
     } else if (!experienceId && experienceId.length === 0) {
       alert("please add titel and categories");
-      navigate("/titel");
+      navigate("/activity/titel"); // Updated path
     }
   }, [_id, experienceId, navigate]);
+  
   const submit = async () => {
     if (
       !duration.days ||
@@ -73,15 +75,17 @@ const Duration = () => {
       alert(responseJson.message);
       return;
     }
-    navigate("/location", {
+    navigate("/activity/location", { // Updated path
       state: {
         ...responseJson,
       },
     });
   };
+  
   const goBack = () => {
-    navigate("/titel");
+    navigate("/activity/titel"); // Updated path
   };
+  
   return (
     <div
       style={{

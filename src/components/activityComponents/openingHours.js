@@ -54,20 +54,20 @@ const OpeningHours = () => {
       }
       if (!experienceId && experienceId.length === 0) {
         alert("please add titel and categories");
-        navigate("/titel");
+        navigate("/activity/titel");
         return;
       }
     })();
     if (!experienceId && experienceId.length === 0) {
       alert("please add titel and categories");
-      navigate("/titel");
+      navigate("/activity/titel");
     }
   }, [experienceId, navigate]);
   const [showDefaultOperatingHours, setShowDefaultOperatingHours] =
     useState(false);
   const createOpeningHours = async () => {
     if (!showDefaultOperatingHours) {
-      navigate("/bookingCutoff", {
+      navigate("/activity/bookingCutoff", {
         state: {
           ...{},
         },
@@ -85,12 +85,13 @@ const OpeningHours = () => {
       const closeHour = day[key].closeHour;
       const open24Hours = day[key].open24Hours;
       const availabilityData = {
-        day: Object.keys(day)[0],
-        isOpen: true,
-        is24Hours: day[key].open24Hours,
-        openHour: open24Hours ? "00:00" : openHour,
-        closeHour: open24Hours ? "00:00" : closeHour,
-      };
+  day: Object.keys(day)[0],
+  isOpen: true,
+  is24Hours: Boolean(day[key].open24Hours),
+  openHour: day[key].open24Hours ? "00:00" : openHour,
+  closeHour: day[key].open24Hours ? "00:00" : closeHour,
+};
+
       formattedAvailability.push(availabilityData);
     });
     console.log("formattedAvailability", formattedAvailability);
@@ -109,7 +110,7 @@ const OpeningHours = () => {
     );
     const result = await response.json();
     if (result) {
-      navigate("/bookingCutoff", {
+      navigate("/activity/bookingCutoff", {
         state: {
           ...{},
         },
@@ -117,7 +118,7 @@ const OpeningHours = () => {
     }
   };
   const goBack = () => {
-    navigate("/timeDatePass");
+    navigate("/activity/timeDatePass");
   };
   const checkboxOnchange = (e, dayName) => {
     console.log("checkboxOnchange", e, dayName);

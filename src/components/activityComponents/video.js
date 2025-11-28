@@ -2,6 +2,7 @@ import { Button, TextField } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import "react-quill/dist/quill.snow.css";
 import {  useNavigate } from "react-router-dom";
+
 const Videos = () => {
   const navigate = useNavigate();
   const [videoLinks, setVideoLinks] = useState([""]);
@@ -31,11 +32,11 @@ const Videos = () => {
     }
     if (!experienceId && experienceId.length === 0) {
       alert("please add titel and categories");
-      navigate("/titel");
+      navigate("/activity/titel"); // Updated path
       return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [experienceId, navigate]);
+  
   const submit = async () => {
     if (videoLinks.length === 0) {
       alert("please add videos");
@@ -59,15 +60,17 @@ const Videos = () => {
       alert(responseJson.error);
       return;
     }
-    navigate("/timeDatePass", {
+    navigate("/activity/timeDatePass", { // Updated path
       state: {
         ...responseJson,
       },
     });
   };
+  
   const goBack = () => {
-    navigate("/photos");
+    navigate("/activity/photos"); // Updated path
   };
+  
   const handleVideoLinkChange = (index, value) => {
     const newLinks = [...videoLinks];
     newLinks[index] = value;
@@ -77,6 +80,7 @@ const Videos = () => {
   const addVideoLink = () => {
     setVideoLinks([...videoLinks, ""]);
   };
+  
   return (
     <div
       style={{

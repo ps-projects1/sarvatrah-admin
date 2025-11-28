@@ -14,7 +14,7 @@ const Capacity = () => {
   const [experienceId] = useState(localId || "")
   const [capacity, setCapacity] = useState("");
   const goBack = () => {
-    navigate("/bookingCutoff");
+    navigate("/activity/bookingCutoff");
   };
   useEffect(() => {
     if (experienceId && experienceId.length > 0) {
@@ -38,7 +38,7 @@ const Capacity = () => {
     }
     if (!experienceId && experienceId.length === 0) {
       alert("please add titel and categories");
-      navigate("/titel");
+      navigate("/activity/titel");
     }
   }, [experienceId, navigate]);
 
@@ -51,7 +51,7 @@ const Capacity = () => {
       capacity,
     };
     
-    navigate("/startTime", {
+    navigate("/activity/startTime", {
       state: {
         ...data,
       },

@@ -198,7 +198,7 @@ const MeetingPoint = () => {
               <Button
                 variant="text"
                 color="primary"
-                onClick={() => navigate("/addactivity")}
+                onClick={() => navigate("/activity/addactivity")}
               >
                 ← Back to Add Activity
               </Button>

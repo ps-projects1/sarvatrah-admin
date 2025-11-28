@@ -43,6 +43,7 @@ const Inclusions = () => {
   const [experienceId] = useState(localId ? localId : "");
   const [short_description, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
+  
   useEffect(() => {
     if (experienceId) {
       (async function () {
@@ -67,12 +68,14 @@ const Inclusions = () => {
     }
     if (!experienceId) {
       alert("please add titel and categories");
-      navigate("/titel");
+      navigate("/activity/titel"); // Updated path
     }
   }, [experienceId, navigate]);
+  
   const goBack = () => {
-    navigate("/description"); // Change "/location" to the desired location path
+    navigate("/activity/description"); // Updated path
   };
+  
   const submit = async () => {
     if (!short_description) {
       alert("Please enter the short description");
@@ -100,7 +103,7 @@ const Inclusions = () => {
       alert(responseJson.error);
       return;
     }
-    navigate("/exclusions", {
+    navigate("/activity/exclusions", { // Updated path
       state: {
         ...responseJson,
       },
@@ -169,9 +172,6 @@ const Inclusions = () => {
             formats={formats}
             value={description}
             onChange={(e) => setDescription(e)}
-            // value={editorValue}
-            // {...restProps}
-            // onChange={handleEditorChange}
           />
         </div>
       </div>

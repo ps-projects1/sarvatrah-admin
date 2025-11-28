@@ -29,7 +29,7 @@ const MeetingPickup = () => {
     })();
   }, [experienceId]);
 
-  const goBack = () => navigate("/pricingCategories");
+  const goBack = () => navigate("/activity/pricingCategories");
 
   const submit = async () => {
     const res = await fetch(
@@ -42,7 +42,7 @@ const MeetingPickup = () => {
     );
 
     const data = await res.json();
-    if (data) navigate("/meetingPoint");
+    if (data) navigate("/activity/meetingPoint");
   };
 
   return (

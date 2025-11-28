@@ -58,7 +58,7 @@ const Titel = () => {
     const responseJson = await response.json();
     console.log(responseJson, "responseJson");
     localStorage.setItem("_id", responseJson._id);
-    navigate("/duration", {
+    navigate("/activity/duration", {
       state: {
         title: title,
         _id: responseJson._id,

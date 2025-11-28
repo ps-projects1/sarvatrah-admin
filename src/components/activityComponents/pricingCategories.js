@@ -81,13 +81,13 @@ const PricingCategories = () => {
       return;
     }
     if (!_id && !localID) {
-      navigate("/titel");
+      navigate("/activity/titel");
       return;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const goBack = () => {
-    navigate("/calendar");
+    navigate("/activity/calendar");
   };
   //travelling_facility
   const handleSwitchChange = () => {
@@ -146,7 +146,7 @@ const PricingCategories = () => {
     );
     const data2 = await response.json();
     console.log(data2);
-    navigate("/meetingPickup", { state: { ...data2 } });
+    navigate("/activity/meetingPickup", { state: { ...data2 } });
   };
 
   

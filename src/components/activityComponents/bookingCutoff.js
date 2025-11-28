@@ -25,7 +25,7 @@ const BookingCutoff = () => {
   useEffect(() => {
     if (!experienceId && experienceId.length === 0) {
       alert("please add titel and categories");
-      navigate("/titel");
+      navigate("/activity/titel");
       return;
     }
     (async function () {
@@ -60,7 +60,7 @@ const BookingCutoff = () => {
     })();
   }, [experienceId, navigate]);
   const goBack = () => {
-    navigate("/openingHours");
+    navigate("/activity/openingHours");
   };
   const submit = async () => {
     if (showTimeSection && selectedOption.value === "custom") {
@@ -85,7 +85,7 @@ const BookingCutoff = () => {
         }
       );
       const result = await response.json();
-      navigate("/capacity", {
+      navigate("/activity/capacity", {
         state: {
           ...result,
         },
@@ -109,7 +109,7 @@ const BookingCutoff = () => {
       );
       const result = await response.json();
       console.log(result);
-      navigate("/capacity", {
+      navigate("/activity/capacity", {
         state: {
           ...result,
         },

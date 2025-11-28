@@ -6,12 +6,14 @@ import {
   RadioGroup,
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 const TimeDatePass = () => {
   const [type, setType] = useState("date_time");
   const navigate = useNavigate();
   const localId = localStorage.getItem("_id");
   const [experienceId] = useState(localId ? localId : "");
+  
   useEffect(() => {
     if (experienceId && experienceId.length > 0) {
       (async function () {
@@ -36,19 +38,19 @@ const TimeDatePass = () => {
         }
         setType(responseJson.availabilityType);
       })();
-
       return;
     }
     if (!experienceId && experienceId.length === 0) {
       alert("please add titel and categories");
-      navigate("/titel");
+      navigate("/activity/titel"); // Updated path
       return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [experienceId, navigate]);
+  
   const goBack = () => {
-    navigate("/videos");
+    navigate("/activity/videos"); // Updated path
   };
+  
   const submit = async () => {
     const data = {
       availabilityType: type,
@@ -68,12 +70,13 @@ const TimeDatePass = () => {
       alert(responseJson.error);
       return;
     }
-    navigate("/openingHours", {
+    navigate("/activity/openingHours", { // Updated path
       state: {
         ...responseJson,
       },
     });
   };
+  
   return (
     <div
       style={{
@@ -105,7 +108,6 @@ const TimeDatePass = () => {
           <RadioGroup
             aria-labelledby="demo-radio-buttons-group-label"
             defaultValue={type}
-
             name="radio-buttons-group"
             onChange={(e) => setType(e.target.value)}
             value={type}
@@ -122,9 +124,8 @@ const TimeDatePass = () => {
               }}
             >
               <FormControlLabel
-            value="date_time"
-control={<Radio onChange={() => setType("date_time")} />}
-
+                value="date_time"
+                control={<Radio onChange={() => setType("date_time")} />}
               />
               <div>
                 <h5>Date and Time</h5>
@@ -203,5 +204,3 @@ control={<Radio onChange={() => setType("date_time")} />}
 };
 
 export default TimeDatePass;
-
-//   enum: ["date_time", "date", "pass"],

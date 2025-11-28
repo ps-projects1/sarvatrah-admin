@@ -459,7 +459,7 @@ const Calendar = () => {
   useEffect(() => {
     if (!experienceId) {
       alert("Please add title and categories");
-      navigate("/titel");
+      navigate("/activity/titel");
       return;
     }
     fetchCalendarData();
@@ -776,7 +776,7 @@ const Calendar = () => {
         </Button>
         <Button 
           variant="contained" 
-          onClick={() => navigate("/pricingCategories")}
+          onClick={() => navigate("/activity/pricingCategories")}
           disabled={currentEvents.length === 0}
         >
           Continue to Pricing

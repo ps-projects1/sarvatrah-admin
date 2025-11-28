@@ -1,5 +1,3 @@
-
-
 import {
   Button,
   TextField,
@@ -45,6 +43,7 @@ const Exclusions = () => {
   const [description, setDescription] = useState("");
   const localId = localStorage.getItem("_id");
   const [experienceId] = useState(localId ? localId : "");
+  
   useEffect(() => {
     if (experienceId && experienceId.length > 0) {
       (async function () {
@@ -72,9 +71,11 @@ const Exclusions = () => {
       return;
     }
   }, [experienceId]);
+  
   const goBack = () => {
-    navigate("/inclusions"); // Change "/location" to the desired location path
+    navigate("/activity/inclusions"); // Updated path
   };
+  
   const handleSubmit = async () => {
     if (!shortDescription.length > 0 && !description.length > 0) {
       alert("Please fill in all the fields");
@@ -84,8 +85,7 @@ const Exclusions = () => {
       exclusions: { short_des: shortDescription, detail_dec: description },
     };
     const res = await fetch(
-     `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`
-,
+      `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
       {
         method: "PUT",
         headers: {
@@ -99,12 +99,13 @@ const Exclusions = () => {
       alert(responseJson.message);
       return;
     }
-    navigate("/photos", {
+    navigate("/activity/photos", { // Updated path
       state: {
         ...responseJson,
       },
     });
   };
+  
   return (
     <div
       style={{
@@ -171,9 +172,6 @@ const Exclusions = () => {
             onChange={(e) => {
               setDescription(e);
             }}
-            // value={editorValue}
-            // {...restProps}
-            // onChange={handleEditorChange}
           />
         </div>
       </div>
