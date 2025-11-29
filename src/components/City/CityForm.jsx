@@ -32,7 +32,7 @@ const CityForm = ({ cityData, onSubmit, mode = "add", onCancel }) => {
           json.data.map((item) => ({
             id: item._id,
             label: item.name,
-            countryId: item.country, // ✅ store country dynamically
+            countryId: item.country,
           }))
         );
       } catch (err) {
@@ -74,7 +74,7 @@ const CityForm = ({ cityData, onSubmit, mode = "add", onCancel }) => {
     const submitData = {
       name: formData.name,
       stateId: formData.state,
-      countryId: formData.country, // ✅ dynamic country
+      countryId: formData.country, 
       description: formData.description,
       active: formData.active,
     };
@@ -108,7 +108,7 @@ const CityForm = ({ cityData, onSubmit, mode = "add", onCancel }) => {
           value={stateOptions.find((s) => s.id === formData.state) || null}
           onChange={(e, selectedOption) => {
             handleInputChange("state", selectedOption?.id || "");
-            handleInputChange("country", selectedOption?.countryId || ""); // ✅ auto set country
+            handleInputChange("country", selectedOption?.countryId || ""); 
           }}
           getOptionLabel={(option) => option.label}
           renderInput={(params) => (

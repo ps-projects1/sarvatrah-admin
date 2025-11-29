@@ -1,11 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import hotelReducer from "./slices/hotelSlice";
-import cityReducer from "./slices/citySlice";   // ⬅ ADD THIS
+import cityReducer from "./slices/citySlice";   
 
 export const store = configureStore({
   reducer: {
     hotel: hotelReducer,
-    cities: cityReducer,   // ⬅ FIX: Must match slice name
+    cities: cityReducer,   
   },
 
   middleware: (getDefaultMiddleware) =>
