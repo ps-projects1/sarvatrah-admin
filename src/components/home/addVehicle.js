@@ -30,7 +30,6 @@ const initialVehicleState = {
   inventory: 0,
   status: false,
   seatLimit: 0,
-  rate: 0,
   luggageCapacity: 0,
 };
 
@@ -61,7 +60,13 @@ const AddVehicle = () => {
       );
       const data = await response.json();
       if (data.status) {
-        setAvailableVehicles(data.data);
+        // Sort vehicles by creation date (newest first)
+        const sortedVehicles = [...data.data].sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0);
+          const dateB = new Date(b.createdAt || 0);
+          return dateB - dateA; // Descending order (newest first)
+        });
+        setAvailableVehicles(sortedVehicles);
       } else {
         toast.error("Failed to fetch vehicles");
       }
@@ -95,7 +100,6 @@ const AddVehicle = () => {
         inventory: Number(vehicleData.inventory),
         active: Boolean(vehicleData.status),
         seatLimit: Number(vehicleData.seatLimit),
-        rate: Number(vehicleData.rate),
         luggageCapacity: Number(vehicleData.luggageCapacity),
       };
 
@@ -143,7 +147,6 @@ const AddVehicle = () => {
         inventory: vehicle.inventory,
         status: vehicle.active,
         seatLimit: vehicle.seatLimit,
-        rate: vehicle.rate,
         luggageCapacity: vehicle.luggageCapacity,
       },
     ]);
@@ -417,9 +420,6 @@ const AddVehicle = () => {
                     <p>
                       <strong>Luggage:</strong> {viewingVehicle.luggageCapacity}
                     </p>
-                    <p>
-                      <strong>Rate:</strong> {viewingVehicle.rate}
-                    </p>
                   </div>
                 </div>
               </div>
@@ -505,17 +505,6 @@ const VehicleForm = ({ index, vehicle, onChange, onRemove, showRemove }) => (
               className="form-control"
               value={vehicle.inventory}
               onChange={(e) => onChange(index, "inventory", e.target.value)}
-            />
-          </div>
-
-          {/* Rate */}
-          <div className="col-sm-4">
-            <label className="form-label">Rate</label>
-            <input
-              type="number"
-              className="form-control"
-              value={vehicle.rate}
-              onChange={(e) => onChange(index, "rate", e.target.value)}
             />
           </div>
 

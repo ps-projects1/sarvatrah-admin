@@ -95,7 +95,7 @@ const initialState = {
   },
   pagination: {
     currentPage: 1,
-    rowsPerPage: 5,
+    rowsPerPage: 10,
     totalPages: 1,
   },
   status: "idle",
@@ -147,10 +147,16 @@ const hotelSlice = createSlice({
       })
       .addCase(fetchHotels.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.data = action.payload;
-        state.filteredData = action.payload;
+        // Sort hotels by creation date (newest first)
+        const sortedHotels = [...action.payload].sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0);
+          const dateB = new Date(b.createdAt || 0);
+          return dateB - dateA; // Descending order (newest first)
+        });
+        state.data = sortedHotels;
+        state.filteredData = sortedHotels;
         state.pagination.totalPages = Math.ceil(
-          action.payload.length / state.pagination.rowsPerPage
+          sortedHotels.length / state.pagination.rowsPerPage
         );
       })
       .addCase(fetchHotels.rejected, (state, action) => {

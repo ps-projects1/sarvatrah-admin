@@ -94,6 +94,13 @@ const HotelList = ({
     handleCloseEditModal();
   };
 
+   const sortedHotels = [...hotels].sort((a, b) => {
+    const dateA = new Date(a.updatedAt || a.createdAt || 0);
+    const dateB = new Date(b.updatedAt || b.createdAt || 0);
+    return dateB - dateA; 
+  });
+
+
   const handleDeleteWithErrorHandling = async (hotelId) => {
     await handleDelete(hotelId);
   };
@@ -126,7 +133,7 @@ const HotelList = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {hotels.map((hotel) => (
+            {sortedHotels.map((hotel) => (
               <TableRow key={hotel._id || hotel.id}>
                 <TableCell>
                   <Typography fontWeight="bold">
@@ -316,25 +323,51 @@ const HotelList = ({
               {/* Image Slider */}
               {selectedHotel.imgs?.length > 0 ? (
                 <Box sx={{ my: 3 }}>
+                  <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
+                    Debug: {selectedHotel.imgs.length} images found
+                  </Typography>
                   <Carousel
                     autoPlay={false}
                     navButtonsAlwaysVisible
                     indicators
                     animation="slide"
                   >
-                    {selectedHotel.imgs.map((img, index) => (
-                      <Box key={index} sx={{ height: "300px" }}>
-                        <img
-                          src={img.path}
-                          alt={`${selectedHotel.hotelName} ${index + 1}`}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      </Box>
-                    ))}
+                    {selectedHotel.imgs.map((img, index) => {
+                      // Debug logging
+                      console.log("Image data:", img);
+                      console.log("Image type:", typeof img);
+
+                      const imageSrc = typeof img === 'string'
+                        ? (img.startsWith('http') ? img : `${process.env.REACT_APP_API_BASE_URL}/${img}`)
+                        : (img.path?.startsWith('http') ? img.path : `${process.env.REACT_APP_API_BASE_URL}/${img.path}`);
+
+                      console.log("Final image URL:", imageSrc);
+
+                      return (
+                        <Box key={index} sx={{ height: "300px" }}>
+                          <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>
+                            Image {index + 1}: {imageSrc}
+                          </Typography>
+                          <img
+                            src={imageSrc}
+                            alt={`${selectedHotel.hotelName} ${index + 1}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                            onError={(e) => {
+                              console.error("Image failed to load:", imageSrc);
+                              console.error("Original img data:", img);
+                              e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect fill='%23ddd' width='300' height='300'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EImage not found%3C/text%3E%3C/svg%3E";
+                            }}
+                            onLoad={() => {
+                              console.log("Image loaded successfully:", imageSrc);
+                            }}
+                          />
+                        </Box>
+                      );
+                    })}
                   </Carousel>
                 </Box>
               ) : (

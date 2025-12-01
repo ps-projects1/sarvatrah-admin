@@ -265,20 +265,26 @@ const Hotel = () => {
         </Box>
       ) : (
         <>
-          <HotelList
-            hotels={paginatedHotels}
-            loading={status === "loading"}
-            selectedHotel={selectedHotel}
-            setSelectedHotel={setSelectedHotel}
-            handleDelete={handleDelete}
-            handleEdit={handleEdit}
-            isMobile={isMobile}
-            theme={theme}
-            openViewModal={openViewModal}
-            setOpenViewModal={setOpenViewModal}
-            handleStatusToggle={handleStatusToggle}
-            updatingHotelId={updatingHotelId}
-          />
+         <HotelList
+  hotels={paginatedHotels}
+  loading={status === "loading"}
+  selectedHotel={selectedHotel}
+  setSelectedHotel={setSelectedHotel}
+  handleDelete={handleDelete}
+  handleEdit={handleEdit}
+  isMobile={isMobile}
+  theme={theme}
+  openViewModal={openViewModal}
+  setOpenViewModal={setOpenViewModal}
+  handleStatusToggle={handleStatusToggle}
+  updatingHotelId={updatingHotelId}
+  openEditModal={openEditModal}
+  setOpenEditModal={setOpenEditModal}
+  editingHotel={editingHotel}
+  handleUpdateHotel={handleUpdateHotel}
+  setEditingHotel={setEditingHotel}
+  
+/>
           {filteredData.length > pagination.rowsPerPage && (
             <Box display="flex" justifyContent="center" mt={3}>
               <Pagination

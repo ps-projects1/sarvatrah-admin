@@ -63,8 +63,8 @@ const AddHotels = () => {
   const fileInputRef = useRef(null);
 
   const [roomList, setRoomList] = useState([]);
-  const [endDate, setEndDate] = useState([]);
-  const [startDate, setStartDate] = useState([]);
+const [endDate, setEndDate] = useState(null);
+const [startDate, setStartDate] = useState(null);
 
   const [rooms, setRooms] = useState({
     roomType: null,
@@ -143,8 +143,8 @@ const AddHotels = () => {
         });
         setRoomList([]);
         fileInputRef.current.value = null;
-        setEndDate("");
-        setStartDate("");
+        setEndDate(null);
+setStartDate(null);
         setRooms({
           roomType: null,
           inventory: 0,
@@ -769,44 +769,58 @@ const AddHotels = () => {
                     Duration
                   </label>
                   <div className="col-sm-4 mt-1">
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DatePicker
-                        label="start-date"
-                        value={startDate}
-                        onChange={(newValue) => {
-                          setStartDate(newValue);
-                          const formattedDate =
-                            dayjs(newValue).format("YYYY-MM-DD");
-                          setRooms((prevRooms) => ({
-                            ...prevRooms,
-                            duration: {
-                              ...prevRooms.duration, // Spread existing duration properties
-                              startDate: formattedDate, // Update only the endDate
-                            },
-                          }));
-                        }}
-                      />
-                    </LocalizationProvider>
+                   <LocalizationProvider dateAdapter={AdapterDayjs}>
+  <DatePicker
+    label="start-date"
+    value={startDate}
+    minDate={dayjs()}
+    onChange={(newValue) => {
+      setStartDate(newValue);
+      if (newValue) {
+        const formattedDate = dayjs(newValue).format("YYYY-MM-DD");
+        setRooms((prevRooms) => ({
+          ...prevRooms,
+          duration: {
+            ...prevRooms.duration,
+            startDate: formattedDate,
+          },
+        }));
+      }
+    }}
+    slotProps={{
+      textField: {
+        size: "small"
+      }
+    }}
+  />
+</LocalizationProvider>
                   </div>
                   <div className="col-sm-4 mt-1">
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DatePicker
-                        label="end-date"
-                        value={endDate}
-                        onChange={(newValue) => {
-                          setEndDate(newValue);
-                          const formattedDate =
-                            dayjs(newValue).format("YYYY-MM-DD");
-                          setRooms((prevRooms) => ({
-                            ...prevRooms,
-                            duration: {
-                              ...prevRooms.duration, // Spread existing duration properties
-                              endDate: formattedDate, // Update only the endDate
-                            },
-                          }));
-                        }}
-                      />
-                    </LocalizationProvider>
+                   <LocalizationProvider dateAdapter={AdapterDayjs}>
+  <DatePicker
+    label="end-date"
+    value={endDate}
+    minDate={startDate || dayjs()}
+    onChange={(newValue) => {
+      setEndDate(newValue);
+      if (newValue) {
+        const formattedDate = dayjs(newValue).format("YYYY-MM-DD");
+        setRooms((prevRooms) => ({
+          ...prevRooms,
+          duration: {
+            ...prevRooms.duration,
+            endDate: formattedDate,
+          },
+        }));
+      }
+    }}
+    slotProps={{
+      textField: {
+        size: "small"
+      }
+    }}
+  />
+</LocalizationProvider>
                   </div>
                 </div>
               </div>

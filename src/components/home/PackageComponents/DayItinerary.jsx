@@ -1,6 +1,8 @@
 import React from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
+import { Accordion, AccordionSummary, AccordionDetails, Typography } from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const DayItinerary = ({
   day,
@@ -232,102 +234,108 @@ const DayItinerary = ({
       </div>
 
       {/* Activities Section */}
-      <div className="border p-3">
-        <h6>Activities</h6>
-        {day.activities.map((activity, activityIndex) => (
-          <div key={activityIndex} className="card mb-2">
-            <div className="card-body">
-              <div className="d-flex justify-content-between">
-                <div>
-                  <h6>{activity.title}</h6>
-                  <p>{activity.description}</p>
-                  <small className="text-muted">Type: {activity.type}</small>
-                  {activity.duration && (
-                    <small className="text-muted ms-2">
-                      Duration: {activity.duration}
-                    </small>
-                  )}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography>Activities</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <div>
+            {day.activities.map((activity, activityIndex) => (
+              <div key={activityIndex} className="card mb-2">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between">
+                    <div>
+                      <h6>{activity.title}</h6>
+                      <p>{activity.description}</p>
+                      <small className="text-muted">Type: {activity.type}</small>
+                      {activity.duration && (
+                        <small className="text-muted ms-2">
+                          Duration: {activity.duration}
+                        </small>
+                      )}
+                    </div>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => handleRemoveActivity(dayIndex, activityIndex)}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={() => handleRemoveActivity(dayIndex, activityIndex)}
-                >
-                  Remove
-                </button>
+              </div>
+            ))}
+
+            {/* Add New Activity */}
+            <div className="mt-3">
+              <h6>Add New Activity</h6>
+              <div className="row g-3">
+                <div className="col-md-4">
+                  <label className="form-label">Activity Type</label>
+                  <Autocomplete
+                    options={ACTIVITY_TYPES}
+                    value={
+                      ACTIVITY_TYPES.find(
+                        (opt) => opt.value === newActivity.type
+                      ) || null
+                    }
+                    getOptionLabel={(option) => option.label}
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder="Select Activity Type" />
+                    )}
+                    onChange={(e, selectedOption) =>
+                      handleActivityChange("type", selectedOption?.value || "")
+                    }
+                  />
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Title</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={newActivity.title || ""}
+                    onChange={(e) => handleActivityChange("title", e.target.value)}
+                  />
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Duration</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={newActivity.duration || ""}
+                    onChange={(e) =>
+                      handleActivityChange("duration", e.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="col-md-12">
+                  <label className="form-label">Description</label>
+                  <textarea
+                    className="form-control"
+                    rows="2"
+                    value={newActivity.description || ""}
+                    onChange={(e) =>
+                      handleActivityChange("description", e.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="col-md-12">
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => handleAddActivity(dayIndex)}
+                    disabled={!newActivity.type}
+                  >
+                    Add Activity
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        ))}
-
-        {/* Add New Activity */}
-        <div className="mt-3">
-          <h6>Add New Activity</h6>
-          <div className="row g-3">
-            <div className="col-md-4">
-              <label className="form-label">Activity Type</label>
-              <Autocomplete
-                options={ACTIVITY_TYPES}
-                value={
-                  ACTIVITY_TYPES.find(
-                    (opt) => opt.value === newActivity.type
-                  ) || null
-                }
-                getOptionLabel={(option) => option.label}
-                renderInput={(params) => (
-                  <TextField {...params} placeholder="Select Activity Type" />
-                )}
-                onChange={(e, selectedOption) =>
-                  handleActivityChange("type", selectedOption?.value || "")
-                }
-              />
-            </div>
-
-            <div className="col-md-4">
-              <label className="form-label">Title</label>
-              <input
-                type="text"
-                className="form-control"
-                value={newActivity.title || ""}
-                onChange={(e) => handleActivityChange("title", e.target.value)}
-              />
-            </div>
-
-            <div className="col-md-4">
-              <label className="form-label">Duration</label>
-              <input
-                type="text"
-                className="form-control"
-                value={newActivity.duration || ""}
-                onChange={(e) =>
-                  handleActivityChange("duration", e.target.value)
-                }
-              />
-            </div>
-
-            <div className="col-md-12">
-              <label className="form-label">Description</label>
-              <textarea
-                className="form-control"
-                rows="2"
-                value={newActivity.description || ""}
-                onChange={(e) =>
-                  handleActivityChange("description", e.target.value)
-                }
-              />
-            </div>
-
-            <div className="col-md-12">
-              <button
-                className="btn btn-primary"
-                onClick={() => handleAddActivity(dayIndex)}
-                disabled={!newActivity.type}
-              >
-                Add Activity
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+        </AccordionDetails>
+      </Accordion>
     </div>
   );
 };

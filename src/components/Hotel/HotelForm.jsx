@@ -74,6 +74,8 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
     existingImages: [],
   });
 
+  const [errors, setErrors] = useState({});
+
   const [selectedState, setSelectedState] = useState("");
   const [cityOptions, setCityOptions] = useState([]);
   const fileInputRef = useRef(null);
@@ -210,24 +212,66 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Required field validations
+    if (!formData.hotelType?.trim()) {
+      newErrors.hotelType = "Hotel type is required";
+    }
+    if (!formData.hotelName?.trim()) {
+      newErrors.hotelName = "Hotel name is required";
+    }
+    if (!formData.address?.trim()) {
+      newErrors.address = "Address is required";
+    }
+    if (!formData.state?.trim()) {
+      newErrors.state = "State is required";
+    }
+    if (!formData.city?.trim()) {
+      newErrors.city = "City is required";
+    }
+
+    // Pincode validation (6 digits)
+    if (!formData.pincode?.trim()) {
+      newErrors.pincode = "Pincode is required";
+    } else if (!/^\d{6}$/.test(formData.pincode)) {
+      newErrors.pincode = "Pincode must be 6 digits";
+    }
+
+    // Phone number validation (10 digits)
+    if (!formData.phoneNumber?.trim()) {
+      newErrors.phoneNumber = "Phone number is required";
+    } else if (!/^\d{10}$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = "Phone number must be 10 digits";
+    }
+
+    // Email validation
+    if (!formData.email?.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    // Room list validation
+    if (roomList.length === 0) {
+      newErrors.roomList = "At least one room is required";
+    }
+
+    // Images validation (only for add mode)
+    if (mode === "add" && formData.images.length === 0) {
+      newErrors.images = "At least one image is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmitForm = async () => {
     try {
-      // Validate required fields
-      if (
-        !formData.hotelType ||
-        !formData.hotelName ||
-        !formData.address ||
-        !formData.state ||
-        !formData.city ||
-        !formData.pincode ||
-        !formData.phoneNumber ||
-        !formData.email ||
-        roomList.length === 0
-      ) {
-        console.log(formData.city, "formData");
-        toast.error(
-          "Please fill all required fields and add at least one room"
-        );
+      // Validate form
+      if (!validateForm()) {
+        toast.error("Please fix all validation errors");
         return;
       }
 
@@ -281,6 +325,9 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
     }
 
     setRoomList([...roomList, rooms]);
+    if (errors.roomList) {
+      setErrors({...errors, roomList: null});
+    }
     setRooms({
       roomType: null,
       inventory: 0,
@@ -349,19 +396,25 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
               </div>
               <div className="col-sm-4">
                 <label htmlFor="hotelNameInput" className="form-label">
-                  Hotel Name
+                  Hotel Name <span className="text-danger">*</span>
                 </label>
                 <input
                   required
                   type="text"
-                  className="form-control"
+                  className={`form-control ${errors.hotelName ? 'is-invalid' : ''}`}
                   placeholder="Hotel Name"
                   id="hotelNameInput"
                   value={formData.hotelName}
-                  onChange={(e) =>
-                    handleInputChange("hotelName", e.target.value)
-                  }
+                  onChange={(e) => {
+                    handleInputChange("hotelName", e.target.value);
+                    if (errors.hotelName) {
+                      setErrors({...errors, hotelName: null});
+                    }
+                  }}
                 />
+                {errors.hotelName && (
+                  <div className="invalid-feedback d-block">{errors.hotelName}</div>
+                )}
               </div>
               <div className="col-sm-4">
                 <label htmlFor="addressInput" className="form-label">
@@ -475,44 +528,70 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
               </div>
               <div className="col-sm-4">
                 <label htmlFor="pincodeInput" className="form-label">
-                  Pincode
+                  Pincode <span className="text-danger">*</span>
                 </label>
                 <input
-                  type="number"
-                  className="form-control"
+                  type="text"
+                  maxLength="6"
+                  className={`form-control ${errors.pincode ? 'is-invalid' : ''}`}
                   id="pincodeInput"
-                  placeholder="Pincode"
+                  placeholder="Pincode (6 digits)"
                   value={formData.pincode}
-                  onChange={(e) => handleInputChange("pincode", e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    handleInputChange("pincode", value);
+                    if (errors.pincode) {
+                      setErrors({...errors, pincode: null});
+                    }
+                  }}
                 />
+                {errors.pincode && (
+                  <div className="invalid-feedback d-block">{errors.pincode}</div>
+                )}
               </div>
               <div className="col-sm-4">
                 <label htmlFor="phoneNumberInput" className="form-label">
-                  Contact Number
+                  Contact Number <span className="text-danger">*</span>
                 </label>
                 <input
-                  type="number"
-                  className="form-control"
+                  type="text"
+                  maxLength="10"
+                  className={`form-control ${errors.phoneNumber ? 'is-invalid' : ''}`}
                   id="phoneNumberInput"
-                  placeholder="Contact Number"
+                  placeholder="Contact Number (10 digits)"
                   value={formData.phoneNumber}
-                  onChange={(e) =>
-                    handleInputChange("phoneNumber", e.target.value)
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    handleInputChange("phoneNumber", value);
+                    if (errors.phoneNumber) {
+                      setErrors({...errors, phoneNumber: null});
+                    }
+                  }}
                 />
+                {errors.phoneNumber && (
+                  <div className="invalid-feedback d-block">{errors.phoneNumber}</div>
+                )}
               </div>
               <div className="col-sm-4">
                 <label htmlFor="emailInput" className="form-label">
-                  Email Address
+                  Email Address <span className="text-danger">*</span>
                 </label>
                 <input
                   type="email"
-                  className="form-control"
+                  className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                   id="emailInput"
                   placeholder="Email Address"
                   value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  onChange={(e) => {
+                    handleInputChange("email", e.target.value);
+                    if (errors.email) {
+                      setErrors({...errors, email: null});
+                    }
+                  }}
                 />
+                {errors.email && (
+                  <div className="invalid-feedback d-block">{errors.email}</div>
+                )}
               </div>
               <div className="col-sm-4">
                 <label htmlFor="contactPersonInput" className="form-label">
@@ -546,15 +625,20 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
 
               <div className="col-sm-4">
                 <label htmlFor="imagesInput" className="form-label">
-                  Images (Max 10)
+                  Images (Max 10) {mode === "add" && <span className="text-danger">*</span>}
                 </label>
                 <input
                   type="file"
                   ref={fileInputRef}
-                  className="form-control"
+                  className={`form-control ${errors.images ? 'is-invalid' : ''}`}
                   id="imagesInput"
                   multiple
-                  onChange={handleImageChange}
+                  onChange={(e) => {
+                    handleImageChange(e);
+                    if (errors.images) {
+                      setErrors({...errors, images: null});
+                    }
+                  }}
                   accept="image/*"
                 />
                 <small className="text-muted">
@@ -564,6 +648,9 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
                       removedImages.length)}{" "}
                   images remaining
                 </small>
+                {errors.images && (
+                  <div className="invalid-feedback d-block">{errors.images}</div>
+                )}
               </div>
               <div className="col-sm-4">
                 <label htmlFor="activeInput" className="form-label">
@@ -1007,13 +1094,16 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
             </div>
           </div>
 
-          <div className="d-flex justify-content-center mb-4">
+          <div className="d-flex flex-column align-items-center mb-4">
             <button
               onClick={handleAddRoom}
               className="btn btn-primary btn-border"
             >
               Add Room
             </button>
+            {errors.roomList && (
+              <div className="text-danger mt-2">{errors.roomList}</div>
+            )}
           </div>
         </div>
 

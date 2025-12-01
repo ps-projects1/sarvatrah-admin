@@ -6,7 +6,12 @@ import {
   Autocomplete,
   FormControlLabel,
   Switch,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
 } from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Toaster, toast } from "react-hot-toast";
 import DayItinerary from "./DayItinerary";
 import axios from "axios";
@@ -135,7 +140,8 @@ const AddHolidayPackage = ({ editPackageData, onBack }) => {
   const [cities, setCities] = useState([]);
   const [destinationCities, setDestinationCities] = useState([]);
   const [selectedStateId, setSelectedStateId] = useState(null);
-  const [selectedDestinationStateId, setSelectedDestinationStateId] = useState(null);
+  const [selectedDestinationStates, setSelectedDestinationStates] = useState([]);
+  const [vehiclesList, setVehiclesList] = useState([]);
 
   const [availableVehicle, setAvailableVehicle] = useState({
     vehicleType: "",
@@ -155,6 +161,32 @@ const AddHolidayPackage = ({ editPackageData, onBack }) => {
 ).then((res) => {
       setStates(res.data.data || []);
     });
+  }, []);
+
+  // Fetch vehicles
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}/vehicle/get-vehicles`,
+          {
+            headers: {
+              Authorization: `Bearer ${user?.token}`,
+            },
+          }
+        );
+        if (response.data.status) {
+          // Filter only active vehicles
+          const activeVehicles = response.data.data.filter(v => v.active);
+          setVehiclesList(activeVehicles);
+        }
+      } catch (error) {
+        console.error("Error fetching vehicles:", error);
+        toast.error("Failed to fetch vehicles");
+      }
+    };
+    fetchVehicles();
   }, []);
 
   // When editing, populate all fields
@@ -187,9 +219,12 @@ useEffect(() => {
       setItineraryDays(editPackageData.itinerary);
     }
 
-    // 4️⃣ Pre-fill destination state
-    if (editPackageData.destinationStateId) {
-      setSelectedDestinationStateId(editPackageData.destinationStateId);
+    // 4️⃣ Pre-fill destination states (now supports multiple)
+    if (editPackageData.destinationStateIds && Array.isArray(editPackageData.destinationStateIds)) {
+      setSelectedDestinationStates(editPackageData.destinationStateIds);
+    } else if (editPackageData.destinationStateId) {
+      // Backward compatibility for single state
+      setSelectedDestinationStates([editPackageData.destinationStateId]);
     }
 
     // 5️⃣ Pre-fill image preview (themeImage stored URL)
@@ -201,21 +236,24 @@ useEffect(() => {
 
 
 
-  // Fetch destination cities based on selected state ID
+  // Fetch destination cities based on selected states (multiple)
   useEffect(() => {
-    if (selectedDestinationStateId) {
-      axios
-        .get(`${process.env.REACT_APP_API_BASE_URL}/city/get-city?stateId=${selectedDestinationStateId}`)
-        .then((res) => {
-          setDestinationCities(res.data.data || []);
-        })
-        .catch(() => {
-          setDestinationCities([]);
-        });
+    if (selectedDestinationStates.length > 0) {
+      const fetchPromises = selectedDestinationStates.map(stateId =>
+        axios.get(`${process.env.REACT_APP_API_BASE_URL}/city/get-city?stateId=${stateId}`)
+          .then(res => res.data.data || [])
+          .catch(() => [])
+      );
+
+      Promise.all(fetchPromises).then(results => {
+        // Flatten all cities from all states
+        const allCities = results.flat();
+        setDestinationCities(allCities);
+      });
     } else {
       setDestinationCities([]);
     }
-  }, [selectedDestinationStateId]);
+  }, [selectedDestinationStates]);
 
   // Fetch cities based on state
   useEffect(() => {
@@ -571,19 +609,13 @@ const handleSubmit = async () => {
     <div className="col-lg-12">
       <div className="card" style={{ padding: "15px" }}>
         <div>
-          <div
-            className="card-header align-items-center d-flex"
-            style={{ borderTop: "1px solid #e9ebec" }}
-          >
-            <h1
-              className="card-title flex-grow-1"
-              style={{ marginBottom: "0px" }}
-            >
-              Package details
-            </h1>
-          </div>
-
-          <div className="card-body">
+          {/* Package Details Accordion */}
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Package Details</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div className="card-body">
             <div className="row g-3">
               <div className="col-sm-4">
                 <label className="form-label">Package Type</label>
@@ -660,23 +692,23 @@ const handleSubmit = async () => {
               </div>
 
               <div className="col-sm-6">
-                <label className="form-label">Destination State</label>
+                <label className="form-label">Destination States</label>
                 <Autocomplete
+                  multiple
                   options={states}
-                  value={
-                    states.find((s) => s._id === selectedDestinationStateId) || null
-                  }
+                  value={states.filter((s) => selectedDestinationStates.includes(s._id))}
                   getOptionLabel={(option) => option.name || ""}
                   isOptionEqualToValue={(opt, val) => opt._id === val._id}
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      placeholder="Select Destination State"
+                      placeholder="Select Destination States"
                     />
                   )}
-                  onChange={(e, selectedOption) => {
-                    setSelectedDestinationStateId(selectedOption?._id || null);
-                    // Clear destination cities when state changes
+                  onChange={(e, selectedOptions) => {
+                    const stateIds = selectedOptions.map(opt => opt._id);
+                    setSelectedDestinationStates(stateIds);
+                    // Clear destination cities when states change
                     handlePackageChange("destinationCity", []);
                   }}
                 />
@@ -686,7 +718,7 @@ const handleSubmit = async () => {
                 <label className="form-label">Destination Cities</label>
                 <Autocomplete
                   multiple
-                  disabled={!selectedDestinationStateId}
+                  disabled={selectedDestinationStates.length === 0}
                   options={destinationCities}
                   value={packageData.destinationCity}
                   getOptionLabel={(option) => option.name || option}
@@ -698,9 +730,9 @@ const handleSubmit = async () => {
                     <TextField
                       {...params}
                       placeholder={
-                        selectedDestinationStateId
+                        selectedDestinationStates.length > 0
                           ? "Select Destination Cities"
-                          : "First select a state"
+                          : "First select states"
                       }
                     />
                   )}
@@ -1030,11 +1062,17 @@ const handleSubmit = async () => {
                 </div>
               </div>
             </div>
-          </div>
+              </div>
+            </AccordionDetails>
+          </Accordion>
 
-          {/* Available Vehicles Section */}
-          <div className="card-body">
-            <h4 className="card-title">Available Vehicles</h4>
+          {/* Available Vehicles Accordion */}
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Available Vehicles</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div className="card-body">
             {packageData.availableVehicle.map((vehicle, index) => (
               <div key={index} className="row g-3 mb-3">
                 <div className="col-md-4">
@@ -1075,22 +1113,70 @@ const handleSubmit = async () => {
               </div>
             ))}
 
-            <div className="row g-3">
-              <div className="col-md-4">
-                <label className="form-label">Vehicle Type</label>
+            <div className="row g-3 align-items-end">
+              <div className="col-md-3">
+                <label className="form-label">Select Vehicle</label>
+                <Autocomplete
+                  options={vehiclesList}
+                  getOptionLabel={(option) =>
+                    `${option.vehicleType} - ${option.brandName} ${option.modelName}`
+                  }
+                  onChange={(event, newValue) => {
+                    if (newValue) {
+                      setAvailableVehicle({
+                        vehicleType: newValue.vehicleType,
+                        brandName: newValue.brandName,
+                        modelName: newValue.modelName,
+                        seatLimit: newValue.seatLimit,
+                        vehicle_id: newValue._id,
+                        price: 0,
+                        rate: 0,
+                      });
+                    } else {
+                      setAvailableVehicle({
+                        vehicleType: "",
+                        price: 0,
+                        rate: 0,
+                        seatLimit: 0,
+                        vehicle_id: "",
+                        brandName: "",
+                        modelName: "",
+                      });
+                    }
+                  }}
+                  renderInput={(params) => (
+                    <TextField {...params} placeholder="Choose vehicle" size="small" />
+                  )}
+                />
+              </div>
+              <div className="col-md-2">
+                <label className="form-label">Brand</label>
                 <input
                   type="text"
                   className="form-control"
-                  value={availableVehicle.vehicleType}
-                  onChange={(e) =>
-                    setAvailableVehicle((prev) => ({
-                      ...prev,
-                      vehicleType: e.target.value,
-                    }))
-                  }
+                  value={availableVehicle.brandName}
+                  disabled
                 />
               </div>
-              <div className="col-md-3">
+              <div className="col-md-2">
+                <label className="form-label">Model</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={availableVehicle.modelName}
+                  disabled
+                />
+              </div>
+              <div className="col-md-2">
+                <label className="form-label">Seat Limit</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={availableVehicle.seatLimit}
+                  disabled
+                />
+              </div>
+              <div className="col-md-2">
                 <label className="form-label">Price</label>
                 <input
                   type="number"
@@ -1103,24 +1189,10 @@ const handleSubmit = async () => {
                       price: parseFloat(e.target.value),
                     }))
                   }
+                  placeholder="Enter price"
                 />
               </div>
-              <div className="col-md-3">
-                <label className="form-label">Seat Limit</label>
-                <input
-                  type="number"
-                  min="1"
-                  className="form-control"
-                  value={availableVehicle.seatLimit}
-                  onChange={(e) =>
-                    setAvailableVehicle((prev) => ({
-                      ...prev,
-                      seatLimit: parseInt(e.target.value),
-                    }))
-                  }
-                />
-              </div>
-              <div className="col-md-2 d-flex align-items-end">
+              <div className="col-md-1">
                 <button
                   className="btn btn-primary w-100"
                   onClick={handleAddAvailableVehicle}
@@ -1128,15 +1200,21 @@ const handleSubmit = async () => {
                     !availableVehicle.vehicleType || !availableVehicle.price
                   }
                 >
-                  Add Vehicle
+                  Add
                 </button>
               </div>
             </div>
-          </div>
+              </div>
+            </AccordionDetails>
+          </Accordion>
 
-          {/* Itinerary Section */}
-          <div className="card-body">
-            <h4 className="card-title">Itinerary</h4>
+          {/* Itinerary Accordion */}
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Itinerary</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div className="card-body">
             {itineraryDays.length > 0 ? (
               itineraryDays.map((day, index) => (
                 <DayItinerary
@@ -1167,7 +1245,9 @@ const handleSubmit = async () => {
                 Please enter the number of days to create itinerary
               </div>
             )}
-          </div>
+              </div>
+            </AccordionDetails>
+          </Accordion>
         </div>
 
         <div
