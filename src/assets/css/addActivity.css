@@ -1,4 +1,37 @@
-.menuItem{
-    padding: 5px;
-    border-bottom: 1px solid #DEE3EA;
+/* Activity Menu Styles */
+.menuItem {
+    display: block;
+    transition: all 0.2s ease-in-out;
+}
+
+.menuItem.active {
+    font-weight: 600;
+}
+
+/* Smooth scrollbar for activity sidebar */
+.MuiBox-root::-webkit-scrollbar {
+    width: 6px;
+}
+
+.MuiBox-root::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.MuiBox-root::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.MuiBox-root::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Accordion animations */
+.activity-accordion {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.activity-accordion:hover {
+    transform: translateX(2px);
 }

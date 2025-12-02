@@ -1,8 +1,8 @@
-import React from "react";
+import { useState, useEffect } from "react";
+import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
+import { showSuccessToast, showErrorToast } from "../../utils/toast";
 import "../../assets/css/app.min.css";
 import "../../assets/css/bootstrap.min.css";
-import { useState } from "react";
-import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
 
 const AddCategory = () => {
   const [categories, setCategories] = useState([
@@ -11,6 +11,31 @@ const AddCategory = () => {
       name: "",
     },
   ]);
+
+  const [savedCategories, setSavedCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/inventries/categories`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setSavedCategories(data.data || []);
+      }
+    } catch (error) {
+      showErrorToast("Failed to fetch categories");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (index, key, value) => {
     const updatedCategories = [...categories];
@@ -38,40 +63,94 @@ const AddCategory = () => {
 
   const handleSubmit = async () => {
     try {
-      const promises = categories.map(async (category) => {
+      const validCategories = categories.filter(cat => cat.name.trim() !== "");
+
+      if (validCategories.length === 0) {
+        showErrorToast("Please enter at least one category name");
+        return;
+      }
+
+      const promises = validCategories.map(async (category) => {
         const url = `${process.env.REACT_APP_API_BASE_URL}/inventries/categories?categoryType=${category.category}&name=${category.name}`;
-        const response = await fetch(url, {
+        return fetch(url, {
           method: "POST",
         });
-        return response;
       });
 
       const responses = await Promise.all(promises);
+      const allSuccessful = responses.every((response) => response.ok);
 
-      const allResponsesSuccessful = responses.every((response) => response.ok);
+      if (allSuccessful) {
+        showSuccessToast("Categories added successfully!");
 
-      if (allResponsesSuccessful) {
-        console.log("All categories added successfully");
-        // Optionally, you can reset the form or perform other actions upon successful submission
         setCategories([
           {
             category: "standard",
             name: "",
           },
         ]);
+
+        fetchCategories();
       } else {
-        console.error("Failed to add some categories");
+        showErrorToast("Failed to add some categories");
       }
     } catch (error) {
-      console.error("Error:", error);
+      showErrorToast("An error occurred while adding categories");
     }
+  };
+
+  const getCategoryTypeLabel = (type) => {
+    const labels = {
+      standard: "Standard",
+      deluxe: "Deluxe",
+      superDeluxe: "Super Deluxe"
+    };
+    return labels[type] || type;
   };
 
   return (
     <div className="col-lg-12">
+      <div className="card" style={{ margin: "15px", padding: "15px", marginBottom: "20px" }}>
+        <div className="card-header align-items-center d-flex">
+          <h1 className="card-title flex-grow-1">Existing Categories</h1>
+        </div>
+        <div className="card-body">
+          {loading ? (
+            <p>Loading categories...</p>
+          ) : savedCategories.length === 0 ? (
+            <p className="text-muted">No categories found. Add some below!</p>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-bordered table-hover">
+                <thead className="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Category Type</th>
+                    <th>Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {savedCategories.map((cat, idx) => (
+                    <tr key={cat._id || idx}>
+                      <td>{idx + 1}</td>
+                      <td>
+                        <span className="badge bg-primary">
+                          {getCategoryTypeLabel(cat.categoryType)}
+                        </span>
+                      </td>
+                      <td>{cat.name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="card" style={{ margin: "15px", padding: "15px" }}>
         <div className="card-header align-items-center d-flex">
-          <h1 className="card-title flex-grow-1">Add Category</h1>
+          <h1 className="card-title flex-grow-1">Add New Category</h1>
         </div>
         <div>
           {categories.map((category, index) => (
@@ -155,16 +234,22 @@ const AddCategory = () => {
           <div
             style={{
               display: "flex",
-              alignItems: "end",
+              alignItems: "center",
               justifyContent: "center",
+              padding: "20px 0",
             }}
           >
             <button
+              type="button"
               onClick={addCategory}
-              className="form-label btn btn-primary btn-border"
-              style={{ marginBottom: "0px" }}
+              className="btn btn-primary btn-border"
+              style={{
+                marginBottom: "0px",
+                padding: "10px 30px",
+                fontSize: "16px"
+              }}
             >
-              Add Category
+              + Add Category
             </button>
           </div>
         </div>

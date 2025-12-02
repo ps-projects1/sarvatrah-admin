@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Table,
@@ -17,12 +17,13 @@ import AddHolidayPackage from "./addHolidayPackage";
 import { useLocation } from "react-router-dom";
 
 const PackageListing = () => {
-  const [packages, setPackages] = useState([]); // packages for current page
-  const [filtered, setFiltered] = useState([]); // filtered view of packages (client-side search)
+  const [packages, setPackages] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editPackage, setEditPackage] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -32,20 +33,18 @@ const PackageListing = () => {
 
   const location = useLocation();
 
-  // Fetch packages for a given page (default 1)
   const fetchPackages = async (page = 1) => {
     try {
       setLoading(true);
 
       const limit = pagination.itemsPerPage || 10;
       const res = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/holiday/get-holiday-package?page=${page}&limit=${limit}`
+        `${process.env.REACT_APP_API_BASE_URL}/holiday/get-holiday-package?page=${page}&limit=${limit}&sort=-createdAt`
       );
 
       if (res.data && res.data.status && res.data.data) {
         const { holidayPackages, pagination: pag } = res.data.data;
 
-        // update packages and pagination from server response
         setPackages(Array.isArray(holidayPackages) ? holidayPackages : []);
         setFiltered(Array.isArray(holidayPackages) ? holidayPackages : []);
 
@@ -57,28 +56,24 @@ const PackageListing = () => {
           itemsPerPage: pag?.itemsPerPage ?? prev.itemsPerPage,
         }));
       } else {
-        // empty or malformed response
         setPackages([]);
         setFiltered([]);
         setPagination((prev) => ({ ...prev, totalPages: 1, totalItems: 0 }));
       }
-    } catch (e) {
-      console.error("Fetch packages error:", e);
-      // optionally show toast
+    } catch (error) {
+      setPackages([]);
+      setFiltered([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // initial load & reload when returning from form
   useEffect(() => {
     if (!showForm) {
       fetchPackages(1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showForm]);
 
-  // Reset form visibility when route changes
   useEffect(() => {
     setShowForm(false);
     setEditPackage(null);

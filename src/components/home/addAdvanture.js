@@ -1,21 +1,24 @@
-import React from "react";
-import "../../assets/css/app.min.css";
-import "../../assets/css/bootstrap.min.css";
+import { useState, useEffect } from "react";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
-import { useState } from "react";
 import {
   FormControl,
   FormControlLabel,
   Radio,
   RadioGroup,
 } from "@mui/material";
+import { showErrorToast } from "../../utils/toast";
+import "../../assets/css/app.min.css";
+import "../../assets/css/bootstrap.min.css";
 
 const AddAdvanture = () => {
+  const [vehicles, setVehicles] = useState([]);
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
+
   const [formData, setFormData] = useState({
     packageName: "",
     packageDuration: "",
-    availableVehicle: [{ vehicleType: "", price: "" }],
+    availableVehicle: [{ vehicleType: "", vehicleId: "", price: "" }],
     groupSize: "",
     include: [],
     exclude: [],
@@ -30,7 +33,7 @@ const AddAdvanture = () => {
     availableLanguage: [],
     cancellationPolicy: "",
     highlight: "",
-    image: null, // New field for a single image
+    image: null,
     pickUpAndDrop: false,
     pickUpOnly: false,
     dropOnly: false,
@@ -51,6 +54,30 @@ const AddAdvanture = () => {
     },
   });
 
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        setLoadingVehicles(true);
+        const response = await fetch(
+          `${process.env.REACT_APP_API_BASE_URL}/vehicle/get-vehicles`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setVehicles(data.data || data.vehicles || []);
+        } else {
+          showErrorToast("Failed to fetch vehicles");
+        }
+      } catch (error) {
+        showErrorToast("Error loading vehicles");
+      } finally {
+        setLoadingVehicles(false);
+      }
+    };
+
+    fetchVehicles();
+  }, []);
+
   const handleInputChange = (key, value) => {
     setFormData((prevData) => ({
       ...prevData,
@@ -59,12 +86,23 @@ const AddAdvanture = () => {
   };
 
   const handleCheckBoxChange = (key) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      [key]: !prevData[key],
-      [`${key}Location`]: "",
-      [`${key}Price`]: "",
-    }));
+    setFormData((prevData) => {
+      const newValue = !prevData[key];
+      const updates = { [key]: newValue };
+
+      if (key === "pickUpAndDrop") {
+        updates.pickUpAndDropPrice = newValue ? prevData.pickUpAndDropPrice : "";
+      } else if (key === "pickUpOnly") {
+        updates.pickUpOnlyPrice = newValue ? prevData.pickUpOnlyPrice : "";
+      } else if (key === "dropOnly") {
+        updates.dropOnlyPrice = newValue ? prevData.dropOnlyPrice : "";
+      }
+
+      return {
+        ...prevData,
+        ...updates,
+      };
+    });
   };
 
   const handleAgeCheckBoxChange = (type) => {
@@ -161,7 +199,7 @@ const AddAdvanture = () => {
       ...prevData,
       availableVehicle: [
         ...prevData.availableVehicle,
-        { vehicleType: "", price: "" },
+        { vehicleType: "", vehicleId: "", price: "" },
       ],
     }));
   };
@@ -738,7 +776,8 @@ const AddAdvanture = () => {
                 />
               </div>
 
-              {formData.pickUpAndDrop && (
+              {/* Pick Up Location - Show if any pickup option is selected */}
+              {(formData.pickUpAndDrop || formData.pickUpOnly) && (
                 <div className="col-sm-4">
                   <label htmlFor="pickUpLocationInput" className="form-label">
                     Pick Up Location
@@ -748,6 +787,7 @@ const AddAdvanture = () => {
                     className="form-control"
                     placeholder="Pick Up Location"
                     aria-label="pick-up-location"
+                    value={formData.pickUpLocation}
                     onChange={(e) =>
                       handleInputChange("pickUpLocation", e.target.value)
                     }
@@ -755,7 +795,8 @@ const AddAdvanture = () => {
                 </div>
               )}
 
-              {formData.pickUpAndDrop && (
+              {/* Drop Location - Show if any drop option is selected */}
+              {(formData.pickUpAndDrop || formData.dropOnly) && (
                 <div className="col-sm-4">
                   <label htmlFor="dropLocationInput" className="form-label">
                     Drop Location
@@ -765,6 +806,7 @@ const AddAdvanture = () => {
                     className="form-control"
                     placeholder="Drop Location"
                     aria-label="drop-location"
+                    value={formData.dropLocation}
                     onChange={(e) =>
                       handleInputChange("dropLocation", e.target.value)
                     }
@@ -772,6 +814,7 @@ const AddAdvanture = () => {
                 </div>
               )}
 
+              {/* Pick Up & Drop Price */}
               {formData.pickUpAndDrop && (
                 <div className="col-sm-4">
                   <label
@@ -793,23 +836,7 @@ const AddAdvanture = () => {
                 </div>
               )}
 
-              {formData.pickUpOnly && (
-                <div className="col-sm-4">
-                  <label htmlFor="pickUpLocationInput" className="form-label">
-                    Pick Up Location
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Pick Up Location"
-                    aria-label="pick-up-location"
-                    onChange={(e) =>
-                      handleInputChange("pickUpLocation", e.target.value)
-                    }
-                  />
-                </div>
-              )}
-
+              {/* Pick Up Only Price */}
               {formData.pickUpOnly && (
                 <div className="col-sm-4">
                   <label htmlFor="pickUpOnlyPriceInput" className="form-label">
@@ -828,23 +855,7 @@ const AddAdvanture = () => {
                 </div>
               )}
 
-              {formData.dropOnly && (
-                <div className="col-sm-4">
-                  <label htmlFor="dropLocationInput" className="form-label">
-                    Drop Location
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Drop Location"
-                    aria-label="drop-location"
-                    onChange={(e) =>
-                      handleInputChange("dropLocation", e.target.value)
-                    }
-                  />
-                </div>
-              )}
-
+              {/* Drop Only Price */}
               {formData.dropOnly && (
                 <div className="col-sm-4">
                   <label htmlFor="dropOnlyPriceInput" className="form-label">
@@ -873,61 +884,103 @@ const AddAdvanture = () => {
                 <label htmlFor="availableVehicleInput" className="form-label">
                   Available Vehicle
                 </label>
-                {formData.availableVehicle.map((vehicle, index) => (
-                  <div
-                    key={index}
-                    style={{ display: "flex", marginBottom: "10px" }}
-                    className="row g-3"
-                  >
-                    <div className="col-sm-4">
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Vehicle Type"
-                        aria-label="vehicle-type"
-                        value={vehicle.vehicleType}
-                        onChange={(e) =>
-                          handleNestedInputChange(
-                            "availableVehicle",
-                            index,
-                            "vehicleType",
-                            e.target.value
-                          )
-                        }
-                      />
+                {loadingVehicles ? (
+                  <p>Loading vehicles...</p>
+                ) : (
+                  formData.availableVehicle.map((vehicle, index) => (
+                    <div
+                      key={`vehicle-${index}`}
+                      style={{ display: "flex", marginBottom: "10px" }}
+                      className="row g-3"
+                    >
+                      <div className="col-sm-5">
+                        <Autocomplete
+                          options={vehicles}
+                          getOptionLabel={(option) =>
+                            `${option.brandName || ""} ${option.modelName || ""} (${option.vehicleType || ""}) - ${option.seatLimit || 0} seats`.trim()
+                          }
+                          value={
+                            vehicles.find((v) => v._id === vehicle.vehicleId) || null
+                          }
+                          onChange={(e, selectedVehicle) => {
+                            if (selectedVehicle) {
+                              handleNestedInputChange(
+                                "availableVehicle",
+                                index,
+                                "vehicleId",
+                                selectedVehicle._id
+                              );
+                              handleNestedInputChange(
+                                "availableVehicle",
+                                index,
+                                "vehicleType",
+                                `${selectedVehicle.brandName} ${selectedVehicle.modelName}`
+                              );
+                            } else {
+                              handleNestedInputChange(
+                                "availableVehicle",
+                                index,
+                                "vehicleId",
+                                ""
+                              );
+                              handleNestedInputChange(
+                                "availableVehicle",
+                                index,
+                                "vehicleType",
+                                ""
+                              );
+                            }
+                          }}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              placeholder="Select Vehicle"
+                              size="small"
+                            />
+                          )}
+                          isOptionEqualToValue={(option, value) =>
+                            option._id === value._id
+                          }
+                        />
+                      </div>
+                      <div className="col-sm-4">
+                        <input
+                          type="number"
+                          className="form-control"
+                          placeholder="Price"
+                          aria-label="vehicle-price"
+                          value={vehicle.price}
+                          onChange={(e) =>
+                            handleNestedInputChange(
+                              "availableVehicle",
+                              index,
+                              "price",
+                              e.target.value
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="col-sm-3">
+                        {formData.availableVehicle.length > 1 && (
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleRemoveVehicle(index)}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="col-sm-4">
-                      <input
-                        type="number"
-                        className="form-control"
-                        placeholder="Price"
-                        aria-label="vehicle-price"
-                        value={vehicle.price}
-                        onChange={(e) =>
-                          handleNestedInputChange(
-                            "availableVehicle",
-                            index,
-                            "price",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="col-sm-4">
-                      {index < formData.availableVehicle.length - 1 && (
-                        <button
-                          className="btn btn-link"
-                          onClick={() => handleRemoveVehicle(index)}
-                        >
-                          Remove Vehicle
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
                 <div className="col-sm-4">
-                  <button className="btn btn-link" onClick={handleAddVehicle}>
-                    Add Vehicle
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={handleAddVehicle}
+                  >
+                    + Add Vehicle
                   </button>
                 </div>
               </div>
