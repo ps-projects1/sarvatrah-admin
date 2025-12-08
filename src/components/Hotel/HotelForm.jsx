@@ -17,6 +17,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { City, State } from "country-state-city";
 import { IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 
 const amenitiesOptions = [
   { label: "TV" },
@@ -83,6 +84,7 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
   const [endDate, setEndDate] = useState(null);
   const [startDate, setStartDate] = useState(null);
   const [removedImages, setRemovedImages] = useState([]);
+  const [editingRoomIndex, setEditingRoomIndex] = useState(null);
 
   const [rooms, setRooms] = useState({
     roomType: null,
@@ -126,7 +128,17 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
       }
 
       if (hotelData.rooms) {
-        setRoomList(hotelData.rooms);
+        // Normalize room data: convert duration array to object if needed
+        const normalizedRooms = hotelData.rooms.map(room => ({
+          ...room,
+          duration: Array.isArray(room.duration) && room.duration.length > 0
+            ? {
+                startDate: room.duration[0].startDate || "",
+                endDate: room.duration[0].endDate || ""
+              }
+            : room.duration || { startDate: "", endDate: "" }
+        }));
+        setRoomList(normalizedRooms);
       }
 
       if (hotelData.imgs) {
@@ -286,8 +298,15 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
 
       formDataWithImages.append("active", formData.active);
 
-      // Append rooms data
-      formDataWithImages.append("encryptedRooms", JSON.stringify(roomList));
+      // Append rooms data - convert duration back to array format for backend
+      const roomsForBackend = roomList.map(room => ({
+        ...room,
+        duration: [{
+          startDate: room.duration.startDate || "",
+          endDate: room.duration.endDate || ""
+        }]
+      }));
+      formDataWithImages.append("encryptedRooms", JSON.stringify(roomsForBackend));
 
       // Append new images
       formData.images.forEach((image) => {
@@ -324,10 +343,51 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
       return;
     }
 
-    setRoomList([...roomList, rooms]);
+    if (editingRoomIndex !== null) {
+      // Update existing room
+      const updatedRoomList = [...roomList];
+      updatedRoomList[editingRoomIndex] = rooms;
+      setRoomList(updatedRoomList);
+      setEditingRoomIndex(null);
+      toast.success("Room updated successfully");
+    } else {
+      // Add new room
+      setRoomList([...roomList, rooms]);
+    }
+
     if (errors.roomList) {
       setErrors({...errors, roomList: null});
     }
+    setRooms({
+      roomType: null,
+      inventory: 0,
+      occupancyRates: [0, 0, 0],
+      child: {
+        childWithBedPrice: 0,
+        childWithoutBedPrice: 0,
+      },
+      amenities: [],
+      duration: {
+        startDate: "",
+        endDate: "",
+      },
+    });
+    setStartDate(null);
+    setEndDate(null);
+  };
+
+  const handleEditRoom = (index) => {
+    const roomToEdit = roomList[index];
+    setRooms(roomToEdit);
+    setStartDate(roomToEdit.duration.startDate ? dayjs(roomToEdit.duration.startDate) : null);
+    setEndDate(roomToEdit.duration.endDate ? dayjs(roomToEdit.duration.endDate) : null);
+    setEditingRoomIndex(index);
+    // Scroll to room form
+    window.scrollTo({ top: document.getElementById('room-form-section')?.offsetTop - 100, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRoomIndex(null);
     setRooms({
       roomType: null,
       inventory: 0,
@@ -771,7 +831,9 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
                           {row.roomType}
                         </StyledTableCell>
                         <StyledTableCell align="right">
-                          {row.duration.startDate} to {row.duration.endDate}
+                          {row.duration.startDate && row.duration.endDate
+                            ? `${row.duration.startDate} to ${row.duration.endDate}`
+                            : 'Not set'}
                         </StyledTableCell>
                         <StyledTableCell align="right">
                           {row.inventory}
@@ -796,11 +858,21 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
                         </StyledTableCell>
                         <StyledTableCell align="right">
                           <IconButton
+                            color="primary"
+                            onClick={() => handleEditRoom(index)}
+                            disabled={editingRoomIndex === index}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
                             color="error"
                             onClick={() => {
                               const updatedRooms = [...roomList];
                               updatedRooms.splice(index, 1);
                               setRoomList(updatedRooms);
+                              if (editingRoomIndex === index) {
+                                handleCancelEdit();
+                              }
                             }}
                           >
                             <DeleteIcon />
@@ -815,7 +887,7 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
           )}
         </div>
 
-        <div>
+        <div id="room-form-section">
           <div style={{ marginBottom: "20px" }}>
             <div
               className="card-header align-items-center d-flex"
@@ -825,7 +897,7 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
                 className="card-title flex-grow-1"
                 style={{ marginBottom: "0px" }}
               >
-                Room Details
+                {editingRoomIndex !== null ? 'Edit Room Details' : 'Room Details'}
               </h1>
             </div>
             <div className="card-body">
@@ -1095,12 +1167,22 @@ const HotelForm = ({ hotelData, onSubmit, mode = "add" }) => {
           </div>
 
           <div className="d-flex flex-column align-items-center mb-4">
-            <button
-              onClick={handleAddRoom}
-              className="btn btn-primary btn-border"
-            >
-              Add Room
-            </button>
+            <div className="d-flex gap-2">
+              <button
+                onClick={handleAddRoom}
+                className="btn btn-primary btn-border"
+              >
+                {editingRoomIndex !== null ? 'Update Room' : 'Add Room'}
+              </button>
+              {editingRoomIndex !== null && (
+                <button
+                  onClick={handleCancelEdit}
+                  className="btn btn-secondary btn-border"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
             {errors.roomList && (
               <div className="text-danger mt-2">{errors.roomList}</div>
             )}

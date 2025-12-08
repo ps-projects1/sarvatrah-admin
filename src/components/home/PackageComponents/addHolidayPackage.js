@@ -112,6 +112,7 @@ const initialDayItinerary = {
   placesToVisit: [],
   activities: [],
   notes: "",
+  sections: [],
 };
 
 const initialActivity = {
@@ -400,6 +401,23 @@ useEffect(() => {
     const updatedDays = [...itineraryDays];
     updatedDays[dayIndex].activities = updatedDays[dayIndex].activities.filter(
       (_, i) => i !== activityIndex
+    );
+    setItineraryDays(updatedDays);
+  };
+
+  const handleAddSection = (dayIndex, sectionType) => {
+    const updatedDays = [...itineraryDays];
+    if (!updatedDays[dayIndex].sections) {
+      updatedDays[dayIndex].sections = [];
+    }
+    updatedDays[dayIndex].sections.push({ type: sectionType });
+    setItineraryDays(updatedDays);
+  };
+
+  const handleRemoveSection = (dayIndex, sectionIndex) => {
+    const updatedDays = [...itineraryDays];
+    updatedDays[dayIndex].sections = updatedDays[dayIndex].sections.filter(
+      (_, i) => i !== sectionIndex
     );
     setItineraryDays(updatedDays);
   };
@@ -1238,6 +1256,8 @@ const handleSubmit = async () => {
                   handleRemoveActivity={handleRemoveActivity}
                   handleActivityChange={handleActivityChange}
                   handleAddActivity={handleAddActivity}
+                  handleAddSection={handleAddSection}
+                  handleRemoveSection={handleRemoveSection}
                 />
               ))
             ) : (
