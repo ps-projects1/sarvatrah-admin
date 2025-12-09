@@ -12,20 +12,22 @@ import {
   TableRow,
   TextField,
   Typography,
+  IconButton,
+  Chip,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
-
-// Modal style
-const modalStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 800,
-  bgcolor: "background.paper",
-  boxShadow: 24,
-  p: 3,
-};
+import {
+  PageContainer,
+  HeaderSection,
+  FooterButtons,
+  modalStyle,
+  modalHeader,
+  modalBody,
+  modalFooter,
+  InfoBox,
+  SectionTitle,
+} from "./SharedStyles";
 
 // Default form values
 const defaultForm = () => ({
@@ -49,10 +51,25 @@ const MeetingPoint = () => {
   const [rows, setRows] = useState([]);
   const [form, setForm] = useState(defaultForm());
   const [saved, setSaved] = useState(false); // NEW → To show "Back to Add Activity"
+  const [travellerFacility, setTravellerFacility] = useState("meet_on_location");
 
-  // Load meeting points
+  // Redirect if no experience ID
   useEffect(() => {
-    if (!experienceId) return;
+    if (!experienceId) {
+      alert("No activity found. Please start from the beginning.");
+      navigate("/addactivity");
+    }
+  }, [experienceId, navigate]);
+
+  // Load meeting points and traveller facility option
+  useEffect(() => {
+    if (!experienceId) {
+      console.log("=== MEETINGPOINT: No experience ID found ===");
+      return;
+    }
+
+    console.log("=== MEETINGPOINT LOADING ===");
+    console.log("Experience ID:", experienceId);
 
     (async function () {
       const res = await fetch(
@@ -60,14 +77,30 @@ const MeetingPoint = () => {
       );
       const data = await res.json();
 
+      console.log("Full response data:", data);
+      console.log("traveller_facilty value:", data?.traveller_facilty);
+
       if (data?.meeting_point?.length > 0) {
         setRows(data.meeting_point);
+        console.log("Loaded meeting points:", data.meeting_point.length);
+      }
+
+      // Get the traveller facility selection
+      if (data?.traveller_facilty) {
+        console.log("Setting travellerFacility to:", data.traveller_facilty);
+        setTravellerFacility(data.traveller_facilty);
+      } else {
+        console.log("⚠️ No traveller_facilty found in response! Using default: meet_on_location");
       }
     })();
   }, [experienceId]);
 
   // Open modal
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => {
+    console.log("=== OPENING MODAL ===");
+    console.log("Current travellerFacility state:", travellerFacility);
+    setOpen(true);
+  };
 
   // Close modal & reset
   const handleClose = () => {
@@ -131,23 +164,65 @@ const MeetingPoint = () => {
     }
   };
 
+  const getModeLabel = () => {
+    if (travellerFacility === "meet_on_location") return "Meeting Only";
+    if (travellerFacility === "pick_up_only") return "Meeting + Pickup";
+    return "Meeting + Pickup + Drop";
+  };
+
+  const getModeColor = () => {
+    if (travellerFacility === "meet_on_location") return "primary";
+    if (travellerFacility === "pick_up_only") return "secondary";
+    return "success";
+  };
+
   return (
     <>
       {/* Modal */}
-      <Modal open={open} onClose={handleClose}>
+      <Modal open={open} disableEscapeKeyDown>
         <Box sx={modalStyle}>
-          <Typography variant="h6">Add / Edit Meeting Point</Typography>
+          <Box sx={modalHeader}>
+            <Typography variant="h6" fontWeight={600}>
+              {editingIndex >= 0 ? "Edit Meeting Point" : "Add Meeting Point"}
+            </Typography>
+            <IconButton onClick={handleClose} aria-label="close">
+              <CloseIcon />
+            </IconButton>
+          </Box>
 
-          <FormField label="Title" value={form.titel} onChange={(v) => setForm({ ...form, titel: v })} />
-          <FormField label="Address" value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
-          <FormField label="Meeting Point Link" value={form.link} onChange={(v) => setForm({ ...form, link: v })} />
-          <FormField label="Pickup Link" value={form.pickup} onChange={(v) => setForm({ ...form, pickup: v })} />
-          <FormField label="Drop Link" value={form.drop} onChange={(v) => setForm({ ...form, drop: v })} />
-          <FormField label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} />
-          <FormField label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-          <FormField label="Postal Code" value={form.pin_code} onChange={(v) => setForm({ ...form, pin_code: v })} />
+          <Box sx={modalBody}>
+            <InfoBox>
+              <Typography>
+                <strong>Mode:</strong> {getModeLabel()}
+              </Typography>
+            </InfoBox>
 
-          <Box display="flex" justifyContent="space-between" mt={3}>
+            <Box mb={3}>
+              <SectionTitle>Basic Information</SectionTitle>
+              <FormField label="Title" value={form.titel} onChange={(v) => setForm({ ...form, titel: v })} />
+              <FormField label="Address" value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
+            </Box>
+
+            <Box mb={3}>
+              <SectionTitle>Location Links</SectionTitle>
+              <FormField label="Meeting Point Link" value={form.link} onChange={(v) => setForm({ ...form, link: v })} />
+              {(travellerFacility === "pick_up_only" || travellerFacility === "meet_on_location_or_pickup") && (
+                <FormField label="Pickup Link" value={form.pickup} onChange={(v) => setForm({ ...form, pickup: v })} />
+              )}
+              {travellerFacility === "meet_on_location_or_pickup" && (
+                <FormField label="Drop Link" value={form.drop} onChange={(v) => setForm({ ...form, drop: v })} />
+              )}
+            </Box>
+
+            <Box>
+              <SectionTitle>Address Details</SectionTitle>
+              <FormField label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} />
+              <FormField label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
+              <FormField label="Postal Code" value={form.pin_code} onChange={(v) => setForm({ ...form, pin_code: v })} />
+            </Box>
+          </Box>
+
+          <Box sx={modalFooter}>
             <Button variant="outlined" onClick={handleClose}>Cancel</Button>
             <Button variant="contained" onClick={handleSave}>Save</Button>
           </Box>
@@ -155,67 +230,101 @@ const MeetingPoint = () => {
       </Modal>
 
       {/* Main UI */}
-      <div style={{ padding: 20, textAlign: "center" }}>
-        <h2>Meeting Points</h2>
-        <p>Add multiple meeting / pickup / drop points</p>
+      <PageContainer maxWidth="lg">
+        <HeaderSection>
+          <h2>
+            {travellerFacility === "meet_on_location"
+              ? "Meeting Points"
+              : travellerFacility === "pick_up_only"
+              ? "Meeting & Pickup Points"
+              : "Meeting, Pickup & Drop Points"}
+          </h2>
+          <p>
+            {travellerFacility === "meet_on_location"
+              ? "Add meeting points where travellers will meet you"
+              : travellerFacility === "pick_up_only"
+              ? "Add meeting points and pickup locations"
+              : "Add meeting points, pickup and drop locations"}
+          </p>
+          <Box mt={2}>
+            <Chip label={getModeLabel()} color={getModeColor()} />
+          </Box>
+        </HeaderSection>
 
-        {/* Table */}
-        <TableContainer component={Paper} style={{ margin: "20px auto", width: "80%" }}>
+        <TableContainer component={Paper} elevation={2} sx={{ mb: 4, borderRadius: 2 }}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: "background.default" }}>
               <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell>Address</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Address</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 600 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((row, i) => (
-                <TableRow key={i}>
-                  <TableCell>{row.titel}</TableCell>
-                  <TableCell>{row.address}</TableCell>
-                  <TableCell align="center">
-                    <Button onClick={() => handleEdit(i)}>Edit</Button>
-                    <Button onClick={() => handleDelete(i)}>Delete</Button>
+              {rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                    No meeting points added yet. Click "Add Start Point" to begin.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                rows.map((row, i) => (
+                  <TableRow key={i} hover>
+                    <TableCell>{row.titel}</TableCell>
+                    <TableCell>{row.address}</TableCell>
+                    <TableCell align="center">
+                      <Button variant="outlined" size="small" onClick={() => handleEdit(i)} sx={{ mr: 1 }}>
+                        Edit
+                      </Button>
+                      <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(i)}>
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
 
-        {/* Add button */}
-        <Button variant="contained" onClick={handleOpen}>+ Add Start Point</Button>
+        <Box display="flex" justifyContent="center" mb={4}>
+          <Button variant="contained" size="large" onClick={handleOpen}>
+            + Add Start Point
+          </Button>
+        </Box>
 
-        {/* Footer */}
-        <div style={{ marginTop: 60, width: "80%", textAlign: "center" }}>
-          <Button variant="contained" onClick={submit} style={{ width: 200 }}>
+        <FooterButtons>
+          <Button variant="outlined" onClick={() => navigate("/activity/pricingCategories")}>
+            Back
+          </Button>
+          <Button variant="contained" onClick={submit}>
             Continue
           </Button>
+        </FooterButtons>
 
-          {saved && (
-            <div style={{ marginTop: 20 }}>
-              <Button
-                variant="text"
-                color="primary"
-                onClick={() => navigate("/addactivity")}
-              >
-                ← Back to Add Activity
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+        {saved && (
+          <Box textAlign="center" mt={3}>
+            <Button variant="text" color="primary" onClick={() => navigate("/addactivity")}>
+              ← Back to Add Activity
+            </Button>
+          </Box>
+        )}
+      </PageContainer>
     </>
   );
 };
 
 // Input Field Component
 const FormField = ({ label, value, onChange }) => (
-  <div style={{ marginTop: 12 }}>
-    <Typography variant="subtitle2" gutterBottom>{label}</Typography>
-    <TextField fullWidth size="small" value={value} onChange={(e) => onChange(e.target.value)} />
-  </div>
+  <Box mb={2}>
+    <TextField
+      fullWidth
+      label={label}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      variant="outlined"
+    />
+  </Box>
 );
 
 export default MeetingPoint;

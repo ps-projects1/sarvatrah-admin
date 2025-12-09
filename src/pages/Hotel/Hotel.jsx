@@ -13,7 +13,12 @@ import {
   Typography,
   Grid,
   CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import ConfirmDialog from "../../components/Common/ConfirmDialog";
 import {
   fetchHotels,
@@ -298,16 +303,48 @@ const Hotel = () => {
         </>
       )}
 
-      {/* Add Hotel Modal */}
-      <Modal open={openAddModal} onClose={() => setOpenAddModal(false)}>
-        <Box sx={modalStyle(isMobile)}>
+      {/* Add Hotel Dialog */}
+      <Dialog
+        open={openAddModal}
+        maxWidth="lg"
+        fullWidth
+        disableEscapeKeyDown
+      >
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">Add New Hotel</Typography>
+            <IconButton
+              onClick={() => setOpenAddModal(false)}
+              aria-label="close"
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
           <HotelForm onSubmit={handleAddHotel} mode="add" />
-        </Box>
-      </Modal>
+        </DialogContent>
+      </Dialog>
 
-      {/* Edit Hotel Modal */}
-      <Modal open={openEditModal} onClose={() => setOpenEditModal(false)}>
-        <Box sx={modalStyle(isMobile)}>
+      {/* Edit Hotel Dialog */}
+      <Dialog
+        open={openEditModal}
+        maxWidth="lg"
+        fullWidth
+        disableEscapeKeyDown
+      >
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">Edit Hotel</Typography>
+            <IconButton
+              onClick={() => setOpenEditModal(false)}
+              aria-label="close"
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
           {editingHotel && (
             <HotelForm
               onSubmit={handleUpdateHotel}
@@ -315,8 +352,8 @@ const Hotel = () => {
               hotelData={editingHotel}
             />
           )}
-        </Box>
-      </Modal>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

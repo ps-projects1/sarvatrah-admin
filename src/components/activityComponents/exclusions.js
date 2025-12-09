@@ -6,6 +6,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import {
+  PageContainer,
+  HeaderSection,
+  FormContainer,
+  FooterButtons,
+  SectionTitle,
+} from "./SharedStyles";
 
 export const modules = {
   toolbar: [
@@ -107,43 +114,19 @@ const Exclusions = () => {
   };
   
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: "20px",
-          marginBottom: "20px",
-        }}
-      >
-        <h2 style={{ fontWeight: "bold", padding: "5px" }}>
-          What is NOT included in your experience?
-        </h2>
-        <p style={{ padding: "5px", textAlign: "center" }}>
+    <PageContainer maxWidth="lg">
+      <HeaderSection>
+        <h2>What is NOT included in your experience?</h2>
+        <p>
           Is there anything your travellers may need that is not included in
           your offering? Example: Food, Equipment or Additional fees
         </p>
-      </div>
+      </HeaderSection>
 
-      <div style={{ width: "70%" }}>
-        <div style={{ padding: "20px" }}>
-          <h5>Exclusions</h5>
-          <span
-            style={{
-              fontStyle: "italic",
-              fontWeight: "bold",
-              paddingBottom: "5px",
-              fontSize: "smaller",
-            }}
-          >
+      <FormContainer>
+        <div className="form-section">
+          <SectionTitle>Exclusions Summary</SectionTitle>
+          <span className="form-hint">
             Is there something that's not included but can be purchased on the
             day of travel?
           </span>
@@ -151,47 +134,50 @@ const Exclusions = () => {
             fullWidth
             id="outlined-basic"
             variant="outlined"
-            size="small"
+            placeholder="e.g., Personal expenses, Travel insurance, Tips..."
             value={shortDescription || ""}
             onChange={(e) => {
               console.log(e);
               setShortDescription(e?.target?.value);
             }}
+            multiline
+            rows={2}
           />
         </div>
-        <div style={{ padding: "20px" }}>
-          <span style={{ fontStyle: "italic", paddingBottom: "5px" }}>
+
+        <div className="form-section" style={{ marginBottom: "80px" }}>
+          <SectionTitle>Detailed Exclusions</SectionTitle>
+          <span className="form-hint">
             If you need to add more details about what is excluded, you can use
-            the text field below.
+            the text field below
           </span>
           <ReactQuill
-            style={{ height: "150px" }}
+            style={{
+              height: "200px",
+              marginBottom: "60px",
+              border: "1px solid #ddd",
+              borderRadius: "8px"
+            }}
             modules={modules}
             formats={formats}
             value={description || ""}
             onChange={(e) => {
               setDescription(e);
             }}
+            placeholder="Provide detailed information about exclusions..."
           />
         </div>
-      </div>
+      </FormContainer>
 
-      <div
-        style={{
-          width: "70%",
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "150px",
-        }}
-      >
+      <FooterButtons>
         <Button variant="outlined" onClick={goBack}>
           Back
         </Button>
         <Button variant="contained" onClick={handleSubmit}>
           Continue
         </Button>
-      </div>
-    </div>
+      </FooterButtons>
+    </PageContainer>
   );
 };
 

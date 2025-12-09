@@ -6,6 +6,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import {
+  PageContainer,
+  HeaderSection,
+  FormContainer,
+  FooterButtons,
+  SectionTitle,
+} from "./SharedStyles";
 
 export const modules = {
   toolbar: [
@@ -111,87 +118,66 @@ const Inclusions = () => {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: "20px",
-          marginBottom: "20px",
-        }}
-      >
-        <h2 style={{ fontWeight: "bold", padding: "5px" }}>
-          What is included in your experience?
-        </h2>
-        <p style={{ padding: "5px", textAlign: "center" }}>
+    <PageContainer maxWidth="lg">
+      <HeaderSection>
+        <h2>What is included in your experience?</h2>
+        <p>
           Let travellers know what is provided to help them understand what
           they're paying for. Include items such as food and drinks, special
           equipment, and admission fees
         </p>
-      </div>
+      </HeaderSection>
 
-      <div style={{ width: "70%" }}>
-        <div style={{ padding: "20px" }}>
-          <h5>Inclusions</h5>
-          <span
-            style={{
-              fontStyle: "italic",
-              fontWeight: "bold",
-              paddingBottom: "5px",
-              fontSize: "smaller",
-            }}
-          >
+      <FormContainer>
+        <div className="form-section">
+          <SectionTitle>Inclusions Summary</SectionTitle>
+          <span className="form-hint">
             Use the inclusions to highlight any fees, equipment, or other items
-            that are included in your pricing.
+            that are included in your pricing
           </span>
           <TextField
             fullWidth
             id="outlined-basic"
             variant="outlined"
-            size="small"
+            placeholder="e.g., Free parking, Equipment rental, Entrance fees..."
             value={short_description}
             onChange={(e) => setShortDescription(e.target.value)}
+            multiline
+            rows={2}
           />
         </div>
-        <div style={{ padding: "20px" }}>
-          <span style={{ fontStyle: "italic", paddingBottom: "5px" }}>
+
+        <div className="form-section" style={{ marginBottom: "80px" }}>
+          <SectionTitle>Detailed Inclusions</SectionTitle>
+          <span className="form-hint">
             If you need to add more details about what is included, you can use
-            the text field below.
+            the text field below
           </span>
           <ReactQuill
-            style={{ height: "150px" }}
+            style={{
+              height: "200px",
+              marginBottom: "60px",
+              border: "1px solid #ddd",
+              borderRadius: "8px"
+            }}
             modules={modules}
             formats={formats}
             value={description}
             onChange={(e) => setDescription(e)}
+            placeholder="Provide detailed information about inclusions..."
           />
         </div>
-      </div>
+      </FormContainer>
 
-      <div
-        style={{
-          width: "70%",
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "150px",
-        }}
-      >
+      <FooterButtons>
         <Button variant="outlined" onClick={goBack}>
           Back
         </Button>
         <Button variant="contained" onClick={submit}>
           Continue
         </Button>
-      </div>
-    </div>
+      </FooterButtons>
+    </PageContainer>
   );
 };
 

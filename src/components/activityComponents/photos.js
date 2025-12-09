@@ -1,8 +1,14 @@
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import {  Button, Grid, IconButton, Paper } from "@mui/material";
+import {  Button, Grid, IconButton, Paper, Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import {  useNavigate } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
+import {
+  PageContainer,
+  HeaderSection,
+  FooterButtons,
+  CardContainer,
+} from "./SharedStyles";
 
 const Photos = () => {
   const navigate = useNavigate();
@@ -125,48 +131,38 @@ const Photos = () => {
   };
   
 
- 
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: "20px",
-          marginBottom: "30px",
-        }}
-      >
-        <h2 style={{ fontWeight: "bold", padding: "5px" }}>
-          A photo is worth a thousand words!
-        </h2>
-        <p style={{ padding: "5px" }}>
+    <PageContainer maxWidth="lg">
+      <HeaderSection>
+        <h2>A photo is worth a thousand words!</h2>
+        <p>
           We recommend that you add at least 5 high quality photos to your
           experience with various angles and views
         </p>
-      </div>
+      </HeaderSection>
 
-      <div style={{ width: "70%" }}>
+      <Box width="100%" maxWidth="800px" mb={4}>
         <Paper
-          elevation={7}
-          style={{
-            padding: "20px",
+          elevation={0}
+          sx={{
+            p: 4,
             textAlign: "center",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            border: "2px dashed #0000003D",
-            borderRadius: "12px",
-            height: "200px",
-            boxShadow: "none",
-            justifyContet: "center",
+            border: "2px dashed",
+            borderColor: "divider",
+            borderRadius: 3,
+            minHeight: "220px",
+            justifyContent: "center",
+            bgcolor: "background.default",
+            transition: "all 0.2s",
+            "&:hover": {
+              borderColor: "primary.main",
+              bgcolor: "primary.light",
+              opacity: 0.05,
+            }
           }}
         >
           <input
@@ -187,66 +183,99 @@ const Photos = () => {
               alignItems: "center",
               justifyContent: "center",
               flexDirection: "column",
+              gap: "16px",
             }}
           >
-            <h4>Drag photos here to upload</h4>
-            <span>Supported file types are: .png, .jpg, .jpeg</span>
-            <IconButton component="span" size="large">
-              <CloudUploadIcon /> Browse Your Computer
-            </IconButton>
+            <CloudUploadIcon sx={{ fontSize: 48, color: "primary.main" }} />
+            <Box>
+              <h4 style={{ margin: "8px 0" }}>Drag photos here to upload</h4>
+              <span style={{ color: "#666", fontSize: "0.875rem" }}>
+                Supported file types: .png, .jpg, .jpeg
+              </span>
+            </Box>
+            <Button variant="outlined" component="span" startIcon={<CloudUploadIcon />}>
+              Browse Your Computer
+            </Button>
           </label>
         </Paper>
-      </div>
+      </Box>
 
-      <div
-        style={{
-          width: "70%",
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "150px",
-        }}
-      >
+      {photos && photos.length > 0 && (
+        <Box width="100%" maxWidth="800px" mb={4}>
+          <h3 style={{ marginBottom: "16px" }}>Uploaded Photos ({photos.length})</h3>
+          <Grid container spacing={2}>
+            {photos.map((item, index) => (
+              <Grid item xs={12} sm={6} md={4} key={index}>
+                <Box
+                  position="relative"
+                  borderRadius={2}
+                  overflow="hidden"
+                  sx={{
+                    "&:hover .delete-overlay": {
+                      opacity: 1,
+                    }
+                  }}
+                  onMouseEnter={() => setShowBackDrop(index)}
+                  onMouseLeave={() => setShowBackDrop(null)}
+                >
+                  {showBackdrop === index && (
+                    <Box
+                      className="delete-overlay"
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        bgcolor: "rgba(0,0,0,0.6)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        opacity: 0,
+                        transition: "opacity 0.2s",
+                        zIndex: 1,
+                      }}
+                    >
+                      <IconButton
+                        onClick={() => deletePhoto(index)}
+                        sx={{
+                          color: "white",
+                          bgcolor: "error.main",
+                          "&:hover": {
+                            bgcolor: "error.dark",
+                          }
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  )}
+                  <img
+                    src={item?.path}
+                    alt={`Upload ${index + 1}`}
+                    style={{
+                      width: "100%",
+                      height: "200px",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
+      <FooterButtons>
         <Button variant="outlined" onClick={goBack}>
           Back
         </Button>
         <Button variant="contained" onClick={submit}>
           Continue
         </Button>
-      </div>
-
-      <Grid container sx={{ mt: 5 }} spacing={2}>
-        {photos && photos.length > 0
-          ? photos?.map((item, index) => (
-              <Grid
-                item
-                xs={4}
-                key={index}
-                sx={{ mr: 1 }}
-                onMouseEnter={() => setShowBackDrop(index)}
-                onMouseLeave={() => setShowBackDrop(null)}
-              >
-                <div style={{ position: "relative" }}>
-                  {showBackdrop === index && (
-                    <div className="showBackdrop">
-                      <DeleteIcon
-                        sx={{ color: "white", cursor: "pointer" }}
-                        onClick={() => deletePhoto(index)}
-                      />
-                    </div>
-                  )}
-                  <img
-                    src={item?.path}
-                    height="100%"
-                    alt="Uploaded content"
-                    width="100%"
-                    style={{ maxHeight: "300px" }}
-                  />
-                </div>
-              </Grid>
-            ))
-          : null}
-      </Grid>
-    </div>
+      </FooterButtons>
+    </PageContainer>
   );
 };
 

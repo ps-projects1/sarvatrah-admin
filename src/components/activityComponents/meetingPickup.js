@@ -7,12 +7,29 @@ import {
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  PageContainer,
+  HeaderSection,
+  FormContainer,
+  FooterButtons,
+  OptionBox,
+  OptionContent,
+} from "./SharedStyles";
 
 const MeetingPickup = () => {
   const navigate = useNavigate();
   const experienceId = localStorage.getItem("_id");
 
   const [meetingOption, setMeetingOption] = useState("meet_on_location");
+
+  // Redirect if no experience ID
+  useEffect(() => {
+    if (!experienceId) {
+      alert("No activity found. Please start from the beginning.");
+      navigate("/addactivity");
+      return;
+    }
+  }, [experienceId, navigate]);
 
   useEffect(() => {
     if (!experienceId) return;
@@ -32,6 +49,10 @@ const MeetingPickup = () => {
   const goBack = () => navigate("/activity/pricingCategories");
 
   const submit = async () => {
+    console.log("=== MEETINGPICKUP SUBMIT ===");
+    console.log("Experience ID:", experienceId);
+    console.log("Selected meeting option:", meetingOption);
+
     const res = await fetch(
       `${process.env.REACT_APP_API_BASE_URL}/experience/${experienceId}`,
       {
@@ -42,100 +63,76 @@ const MeetingPickup = () => {
     );
 
     const data = await res.json();
-    if (data) navigate("/activity/meetingPoint");
+    console.log("Response from server:", data);
+
+    if (data) {
+      console.log("Navigating to meeting point page...");
+      navigate("/activity/meetingPoint");
+    }
   };
 
   return (
-    <div style={{ padding: 20, display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <div style={{ marginBottom: 30, textAlign: "center" }}>
-        <h2 style={{ fontWeight: "bold" }}>Can travellers be picked up?</h2>
+    <PageContainer maxWidth="lg">
+      <HeaderSection>
+        <h2>Can travellers be picked up?</h2>
         <p>Or should travellers meet you at your location?</p>
-      </div>
+      </HeaderSection>
 
-      <div style={{ width: "70%" }}>
+      <FormContainer>
         <FormControl fullWidth>
           <RadioGroup
             value={meetingOption}
             onChange={(e) => setMeetingOption(e.target.value)}
           >
-            <OptionBox>
+            <OptionBox selected={meetingOption === "meet_on_location"}>
               <FormControlLabel
                 value="meet_on_location"
                 control={<Radio />}
+                sx={{ margin: 0 }}
               />
-              <OptionText
-                title="Meet on Location"
-                desc="Travellers must reach the meeting point themselves."
-              />
+              <OptionContent>
+                <h5>Meet on Location</h5>
+                <span>Travellers must reach the meeting point themselves.</span>
+              </OptionContent>
             </OptionBox>
 
-            <OptionBox>
+            <OptionBox selected={meetingOption === "pick_up_only"}>
               <FormControlLabel
                 value="pick_up_only"
                 control={<Radio />}
+                sx={{ margin: 0 }}
               />
-              <OptionText
-                title="Pick-Up Only"
-                desc="Travellers will be picked up from selected pickup points."
-              />
+              <OptionContent>
+                <h5>Pick-Up Only</h5>
+                <span>Travellers will be picked up from selected pickup points.</span>
+              </OptionContent>
             </OptionBox>
 
-            <OptionBox>
+            <OptionBox selected={meetingOption === "meet_on_location_or_pickup"}>
               <FormControlLabel
                 value="meet_on_location_or_pickup"
                 control={<Radio />}
+                sx={{ margin: 0 }}
               />
-              <OptionText
-                title="Pick-Up & Drop"
-                desc="Travellers get pickup and drop services."
-              />
+              <OptionContent>
+                <h5>Pick-Up & Drop</h5>
+                <span>Travellers get pickup and drop services.</span>
+              </OptionContent>
             </OptionBox>
-
           </RadioGroup>
         </FormControl>
-      </div>
+      </FormContainer>
 
-      <FooterButtons back={goBack} submit={submit} />
-    </div>
+      <FooterButtons>
+        <Button variant="outlined" onClick={goBack}>
+          Back
+        </Button>
+        <Button variant="contained" onClick={submit}>
+          Continue
+        </Button>
+      </FooterButtons>
+    </PageContainer>
   );
 };
-
-// Reusable Components
-const OptionBox = ({ children }) => (
-  <div
-    style={{
-      border: "1px solid #DEE3EA",
-      borderRadius: 8,
-      padding: 40,
-      display: "flex",
-      alignItems: "center",
-      marginTop: 12,
-      gap: 10,
-    }}
-  >
-    {children}
-  </div>
-);
-
-const OptionText = ({ title, desc }) => (
-  <div>
-    <h5>{title}</h5>
-    <span>{desc}</span>
-  </div>
-);
-
-const FooterButtons = ({ back, submit }) => (
-  <div
-    style={{
-      width: "70%",
-      display: "flex",
-      justifyContent: "space-between",
-      marginTop: 100,
-    }}
-  >
-    <Button variant="outlined" onClick={back}>Back</Button>
-    <Button variant="contained" onClick={submit}>Continue</Button>
-  </div>
-);
 
 export default MeetingPickup;

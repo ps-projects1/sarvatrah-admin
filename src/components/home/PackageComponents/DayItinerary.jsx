@@ -10,9 +10,169 @@ const SECTION_TYPES = [
   { value: "activity", label: "Activity" },
   { value: "transport", label: "Transport" },
   { value: "meals", label: "Meals Included" },
-  { value: "places", label: "Places to Visit" },
-  { value: "description", label: "To/From Description" },
+  { value: "hotel", label: "Hotel" },
 ];
+
+const HotelSection = ({ dayIndex, sectionIndex, day, handleRemoveSection, handleAddHotel, handleRemoveHotel }) => {
+  const [newHotel, setNewHotel] = useState({
+    state: "",
+    city: "",
+    pricePerNight: 0,
+    adultsWithChild: 0,
+    adultsWithoutChild: 0,
+    bedType: "",
+  });
+
+  const handleAddClick = () => {
+    if (newHotel.pricePerNight > 0) {
+      // Use state and city from day
+      const hotelData = {
+        state: day.state?.name || "",
+        city: day.city?.name || "",
+        pricePerNight: newHotel.pricePerNight,
+        adultsWithChild: newHotel.adultsWithChild,
+        adultsWithoutChild: newHotel.adultsWithoutChild,
+        bedType: newHotel.bedType,
+      };
+      handleAddHotel(dayIndex, hotelData);
+      setNewHotel({
+        state: "",
+        city: "",
+        pricePerNight: 0,
+        adultsWithChild: 0,
+        adultsWithoutChild: 0,
+        bedType: "",
+      });
+    }
+  };
+
+  return (
+    <div className="border p-3 mb-3 position-relative">
+      <IconButton
+        size="small"
+        color="error"
+        onClick={() => handleRemoveSection(dayIndex, sectionIndex)}
+        style={{ position: "absolute", top: "10px", right: "10px" }}
+      >
+        <DeleteIcon />
+      </IconButton>
+      <h6 className="mb-3">Hotel Section</h6>
+
+      {/* Display existing hotels */}
+      {day.hotels && day.hotels.length > 0 && (
+        <div className="mb-3">
+          {day.hotels.map((hotel, hotelIndex) => (
+            <div key={hotelIndex} className="card mb-2">
+              <div className="card-body">
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    <p className="mb-1"><strong>State:</strong> {hotel.state}</p>
+                    <p className="mb-1"><strong>City:</strong> {hotel.city}</p>
+                    <p className="mb-1"><strong>Price Per Night:</strong> ₹{hotel.pricePerNight}</p>
+                    <p className="mb-1"><strong>Adults with Child:</strong> {hotel.adultsWithChild}</p>
+                    <p className="mb-1"><strong>Adults without Child:</strong> {hotel.adultsWithoutChild}</p>
+                    <p className="mb-0"><strong>Bed Type:</strong> {hotel.bedType}</p>
+                  </div>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleRemoveHotel(dayIndex, hotelIndex)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add New Hotel */}
+      <div className="mt-3">
+        <h6>Add New Hotel</h6>
+        <div className="alert alert-info">
+          <small>State and City will be taken from the day's state and city selected above.</small>
+          <p className="mb-0 mt-1">
+            <strong>Current State:</strong> {day.state?.name || "Not selected"} |
+            <strong> Current City:</strong> {day.city?.name || "Not selected"}
+          </p>
+        </div>
+        <div className="row g-3">
+          <div className="col-md-4">
+            <label className="form-label">Price Per Night (₹)</label>
+            <input
+              type="number"
+              min="0"
+              className="form-control"
+              value={newHotel.pricePerNight}
+              onChange={(e) =>
+                setNewHotel({ ...newHotel, pricePerNight: parseFloat(e.target.value) || 0 })
+              }
+            />
+          </div>
+
+          <div className="col-md-3">
+            <label className="form-label">Adults with Child</label>
+            <input
+              type="number"
+              min="0"
+              className="form-control"
+              value={newHotel.adultsWithChild}
+              onChange={(e) =>
+                setNewHotel({ ...newHotel, adultsWithChild: parseInt(e.target.value) || 0 })
+              }
+            />
+          </div>
+
+          <div className="col-md-3">
+            <label className="form-label">Adults without Child</label>
+            <input
+              type="number"
+              min="0"
+              className="form-control"
+              value={newHotel.adultsWithoutChild}
+              onChange={(e) =>
+                setNewHotel({ ...newHotel, adultsWithoutChild: parseInt(e.target.value) || 0 })
+              }
+            />
+          </div>
+
+          <div className="col-md-2">
+            <label className="form-label">Bed Type</label>
+            <select
+              className="form-control"
+              value={newHotel.bedType}
+              onChange={(e) =>
+                setNewHotel({ ...newHotel, bedType: e.target.value })
+              }
+            >
+              <option value="">Select</option>
+              <option value="Single">Single</option>
+              <option value="Double">Double</option>
+              <option value="Triple">Triple</option>
+              <option value="Queen">Queen</option>
+              <option value="King">King</option>
+            </select>
+          </div>
+
+          <div className="col-md-12">
+            <button
+              className="btn btn-primary"
+              onClick={handleAddClick}
+              disabled={!newHotel.pricePerNight || !day.state || !day.city}
+            >
+              Add Hotel
+            </button>
+            {(!day.state || !day.city) && (
+              <small className="text-danger ms-2">
+                Please select state and city for this day first
+              </small>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const DayItinerary = ({
   day,
@@ -35,6 +195,8 @@ const DayItinerary = ({
   handleAddActivity,
   handleAddSection,
   handleRemoveSection,
+  handleAddHotel,
+  handleRemoveHotel,
 }) => {
   const [selectedSectionType, setSelectedSectionType] = useState(null);
   const [expanded, setExpanded] = useState(false);
@@ -321,6 +483,19 @@ const DayItinerary = ({
               </div>
             </div>
           </div>
+        );
+
+      case "hotel":
+        return (
+          <HotelSection
+            key={sectionIndex}
+            dayIndex={dayIndex}
+            sectionIndex={sectionIndex}
+            day={day}
+            handleRemoveSection={handleRemoveSection}
+            handleAddHotel={handleAddHotel}
+            handleRemoveHotel={handleRemoveHotel}
+          />
         );
 
       default:

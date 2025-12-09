@@ -1,6 +1,13 @@
 import { Autocomplete, Button, TextField } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  PageContainer,
+  HeaderSection,
+  FormContainer,
+  FooterButtons,
+  SectionTitle,
+} from "./SharedStyles";
 
 const categories = [
   "ATV / quad tour",
@@ -218,41 +225,24 @@ const Categories = () => {
   };
   
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: "20px",
-          marginBottom: "30px",
-        }}
-      >
-        <h2 style={{ fontWeight: "bold", padding: "5px" }}>
-          Choose the themes that best describe your experience
-        </h2>
-        <p style={{ padding: "5px" }}>
+    <PageContainer maxWidth="lg">
+      <HeaderSection>
+        <h2>Choose the themes that best describe your experience</h2>
+        <p>
           Help your travellers find what they are looking for. Are you offering
           a walking tour or helicopter tour?
         </p>
-      </div>
+      </HeaderSection>
 
-      <div style={{ width: "70%" }}>
-        <div style={{ padding: "20px" }}>
-          <h5>Categories</h5>
-          <span style={{ fontStyle: "italic", paddingBottom: "5px" }}>
+      <FormContainer>
+        <div className="form-section">
+          <SectionTitle>Categories</SectionTitle>
+          <span className="form-hint">
             Help your customer understand what type of experience this is
           </span>
           <Autocomplete
             disablePortal
-            id="combo-box-demo"
+            id="categories-autocomplete"
             options={categories.map((c) => {
               return {
                 label: c,
@@ -269,20 +259,23 @@ const Categories = () => {
                   })
                 : []
             }
-            renderInput={(params) => <TextField {...params} />}
+            renderInput={(params) => (
+              <TextField {...params} placeholder="Select categories..." />
+            )}
             isOptionEqualToValue={(option, value) =>
               option.label === value.label ? true : false
             }
           />
         </div>
-        <div style={{ padding: "20px" }}>
-          <h5>Theme</h5>
-          <span style={{ fontStyle: "italic", paddingBottom: "5px" }}>
-            Select the themes that apply for this experience...
+
+        <div className="form-section">
+          <SectionTitle>Theme</SectionTitle>
+          <span className="form-hint">
+            Select the themes that apply for this experience
           </span>
           <Autocomplete
             disablePortal
-            id="combo-box-demo"
+            id="theme-autocomplete"
             options={theme}
             onChange={onChangeTheme}
             multiple
@@ -295,30 +288,25 @@ const Categories = () => {
                   })
                 : []
             }
-            renderInput={(params) => <TextField {...params} />}
+            renderInput={(params) => (
+              <TextField {...params} placeholder="Select themes..." />
+            )}
             isOptionEqualToValue={(option, value) =>
               option.label === value.label
             }
           />
         </div>
-      </div>
+      </FormContainer>
 
-      <div
-        style={{
-          width: "70%",
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "150px",
-        }}
-      >
+      <FooterButtons>
         <Button variant="outlined" onClick={goBack}>
           Back
         </Button>
         <Button variant="contained" onClick={submit}>
           Continue
         </Button>
-      </div>
-    </div>
+      </FooterButtons>
+    </PageContainer>
   );
 };
 

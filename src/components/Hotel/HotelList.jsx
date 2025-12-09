@@ -269,8 +269,8 @@ const HotelList = ({
       {/* View Modal */}
       <Modal
         open={openViewModal}
-        onClose={handleCloseViewModal}
         aria-labelledby="hotel-view-modal"
+        disableEscapeKeyDown
       >
         <Box
           sx={{
@@ -572,8 +572,8 @@ const HotelList = ({
       {/* Edit Modal */}
       <Modal
         open={openEditModal}
-        onClose={handleCloseEditModal}
         aria-labelledby="hotel-edit-modal"
+        disableEscapeKeyDown
       >
         <Box
           sx={{
@@ -592,9 +592,17 @@ const HotelList = ({
         >
           {editFormData ? (
             <form onSubmit={handleSubmit}>
-              <Typography variant="h5" gutterBottom>
-                Edit Hotel
-              </Typography>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h5">
+                  Edit Hotel
+                </Typography>
+                <IconButton
+                  onClick={handleCloseEditModal}
+                  aria-label="close"
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Box>
 
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>

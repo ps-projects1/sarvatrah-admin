@@ -111,6 +111,7 @@ const initialDayItinerary = {
   },
   placesToVisit: [],
   activities: [],
+  hotels: [],
   notes: "",
   sections: [],
 };
@@ -418,6 +419,23 @@ useEffect(() => {
     const updatedDays = [...itineraryDays];
     updatedDays[dayIndex].sections = updatedDays[dayIndex].sections.filter(
       (_, i) => i !== sectionIndex
+    );
+    setItineraryDays(updatedDays);
+  };
+
+  const handleAddHotel = (dayIndex, hotelData) => {
+    const updatedDays = [...itineraryDays];
+    if (!updatedDays[dayIndex].hotels) {
+      updatedDays[dayIndex].hotels = [];
+    }
+    updatedDays[dayIndex].hotels.push(hotelData);
+    setItineraryDays(updatedDays);
+  };
+
+  const handleRemoveHotel = (dayIndex, hotelIndex) => {
+    const updatedDays = [...itineraryDays];
+    updatedDays[dayIndex].hotels = updatedDays[dayIndex].hotels.filter(
+      (_, i) => i !== hotelIndex
     );
     setItineraryDays(updatedDays);
   };
@@ -1258,6 +1276,8 @@ const handleSubmit = async () => {
                   handleAddActivity={handleAddActivity}
                   handleAddSection={handleAddSection}
                   handleRemoveSection={handleRemoveSection}
+                  handleAddHotel={handleAddHotel}
+                  handleRemoveHotel={handleRemoveHotel}
                 />
               ))
             ) : (

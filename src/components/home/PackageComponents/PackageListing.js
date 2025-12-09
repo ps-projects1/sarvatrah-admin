@@ -12,7 +12,12 @@ import {
   TextField,
   Typography,
   Box,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import AddHolidayPackage from "./addHolidayPackage";
 import { useLocation } from "react-router-dom";
 
@@ -136,34 +141,13 @@ const PackageListing = () => {
         justifyContent="space-between"
         alignItems="center"
       >
-        <Typography variant="h5">
-          {showForm ? (editPackage ? "Edit Package" : "Add New Package") : "Holiday Packages"}
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={() => {
-            if (showForm) {
-              setShowForm(false);
-              setEditPackage(null);
-            } else {
-              handleAdd();
-            }
-          }}
-        >
-          {showForm ? "Back to Package Listing" : "Add Package"}
+        <Typography variant="h5">Holiday Packages</Typography>
+        <Button variant="contained" onClick={handleAdd}>
+          Add Package
         </Button>
       </Box>
 
-      {showForm ? (
-        <AddHolidayPackage
-          editPackageData={editPackage}
-          onBack={() => {
-            setShowForm(false);
-            // after add/edit, refresh current page
-            fetchPackages(pagination.currentPage || 1);
-          }}
-        />
-      ) : loading ? (
+      {loading ? (
         <Typography>Loading...</Typography>
       ) : (
         <>
@@ -245,6 +229,41 @@ const PackageListing = () => {
           )}
         </>
       )}
+
+      {/* Add/Edit Holiday Package Dialog */}
+      <Dialog
+        open={showForm}
+        maxWidth="lg"
+        fullWidth
+        disableEscapeKeyDown
+      >
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">
+              {editPackage ? "Edit Package" : "Add New Package"}
+            </Typography>
+            <IconButton
+              onClick={() => {
+                setShowForm(false);
+                setEditPackage(null);
+              }}
+              aria-label="close"
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <AddHolidayPackage
+            editPackageData={editPackage}
+            onBack={() => {
+              setShowForm(false);
+              // after add/edit, refresh current page
+              fetchPackages(pagination.currentPage || 1);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

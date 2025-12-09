@@ -1,12 +1,21 @@
 import { Button, TextField } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  PageContainer,
+  HeaderSection,
+  FormContainer,
+  FooterButtons,
+  CardContainer,
+} from "./SharedStyles";
+
 const Titel = () => {
   const [title, setTitle] = useState("");
-  const navigate = useNavigate(); // Move useNavigate outside the function
+  const navigate = useNavigate();
   const _id = localStorage.getItem("_id");
   const [id] = useState(_id);
   console.log(id, "id");
+
   useEffect(() => {
     (async function () {
       try {
@@ -30,8 +39,12 @@ const Titel = () => {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   const createExperience = async () => {
-    if (!title) return;
+    if (!title) {
+      alert("Please enter a title for your experience");
+      return;
+    }
     console.log(title);
     const data = {
       title: title,
@@ -46,15 +59,11 @@ const Titel = () => {
         method: "POST",
       }
     );
-    console.log(response, 'response');
+    console.log(response, "response");
     if (!response.ok) {
       alert("Something went wrong");
-      // console.log("error", response);
       return;
     }
-    // if (response.ok) {
-    //   console.log("success", response);
-    // }
     const responseJson = await response.json();
     console.log(responseJson, "responseJson");
     localStorage.setItem("_id", responseJson._id);
@@ -65,58 +74,42 @@ const Titel = () => {
       },
     });
   };
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: "20px",
-          marginBottom: "30px",
-        }}
-      >
-        <h2 style={{ fontWeight: "bold", padding: "5px" }}>
-          Give your experience a short but descriptive name
-        </h2>
-        <p style={{ padding: "5px" }}>
+    <PageContainer maxWidth="lg">
+      <HeaderSection>
+        <h2>Give your experience a short but descriptive name</h2>
+        <p>
           We recommend using simple language, keep it less than 80 characters,
-          mention what and where the experience is
+          and mention what and where the experience is
         </p>
-      </div>
+      </HeaderSection>
 
-      <div style={{ width: "70%" }}>
-        <TextField
-          onChange={(e) => setTitle(e.target.value)}
-          fullWidth
-          value={title}
-          id="outlined-basic"
-          label="Title"
-          variant="outlined"
-        />
-      </div>
+      <FormContainer>
+        <CardContainer elevation={0}>
+          <TextField
+            onChange={(e) => setTitle(e.target.value)}
+            fullWidth
+            value={title}
+            id="outlined-basic"
+            label="Experience Title"
+            variant="outlined"
+            placeholder="e.g., Guided Tour of Historic Downtown Mumbai"
+            helperText={`${title.length}/80 characters`}
+            inputProps={{ maxLength: 80 }}
+          />
+        </CardContainer>
+      </FormContainer>
 
-      <div
-        style={{
-          width: "70%",
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "150px",
-        }}
-      >
-        <Button variant="outlined">Back</Button>
+      <FooterButtons>
+        <Button variant="outlined" disabled>
+          Back
+        </Button>
         <Button variant="contained" onClick={createExperience}>
           Continue
         </Button>
-      </div>
-    </div>
+      </FooterButtons>
+    </PageContainer>
   );
 };
 

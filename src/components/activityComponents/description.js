@@ -3,6 +3,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import {
+  PageContainer,
+  HeaderSection,
+  FormContainer,
+  FooterButtons,
+  SectionTitle,
+} from "./SharedStyles";
 
 export const modules = {
   toolbar: [
@@ -109,76 +116,62 @@ const Description = () => {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: "20px",
-          marginBottom: "20px",
-        }}
-      >
-        <h2 style={{ fontWeight: "bold", padding: "5px" }}>
-          Tell your travellers what the experience is all about
-        </h2>
-        <p style={{ padding: "5px" }}>
+    <PageContainer maxWidth="lg">
+      <HeaderSection>
+        <h2>Tell your travellers what the experience is all about</h2>
+        <p>
           Describe your experience in detail, using exciting and engaging
           language to capture the essence of the experience
         </p>
-      </div>
+      </HeaderSection>
 
-      <div style={{ width: "70%" }}>
-        <div style={{ padding: "20px" }}>
-          <h5>Short description</h5>
-          <span style={{ fontStyle: "italic", paddingBottom: "5px" }}>
+      <FormContainer>
+        <div className="form-section">
+          <SectionTitle>Short Description</SectionTitle>
+          <span className="form-hint">
             Brief overview of the experience - this will be displayed on product
-            cards in search results.
+            cards in search results
           </span>
           <TextField
             fullWidth
             id="outlined-basic"
             variant="outlined"
-            size="small"
+            placeholder="Write a compelling summary that captures attention..."
             value={shortDescription}
             onChange={(e) => setShortDescription(e.target.value)}
+            multiline
+            rows={2}
+            helperText={`${shortDescription.length} characters`}
           />
         </div>
-        <div style={{ padding: "20px" }}>
-          <h5>Description</h5>
+
+        <div className="form-section" style={{ marginBottom: "80px" }}>
+          <SectionTitle>Detailed Description</SectionTitle>
           <ReactQuill
-            style={{ height: "150px" }}
+            style={{
+              height: "200px",
+              marginBottom: "60px",
+              border: "1px solid #ddd",
+              borderRadius: "8px"
+            }}
             modules={modules}
             formats={formats}
             value={description}
             onChange={(e) => setDescription(e)}
+            placeholder="Provide a detailed description of your experience..."
           />
         </div>
-      </div>
+      </FormContainer>
 
-      <div
-        style={{
-          width: "70%",
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "150px",
-        }}
-      >
+      <FooterButtons>
         <Button variant="outlined" onClick={goBack}>
           Back
         </Button>
         <Button variant="contained" onClick={submit}>
           Continue
         </Button>
-      </div>
-    </div>
+      </FooterButtons>
+    </PageContainer>
   );
 };
 
